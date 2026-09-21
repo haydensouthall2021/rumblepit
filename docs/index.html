@@ -204,6 +204,7 @@ footer p{max-width:70ch}
     <div class="bell">
       <h3 id="lname">Loading</h3>
       <p class="rule" id="lrule"></p>
+      <p class="rule" id="lgame" hidden></p>
       <dl class="facts">
         <div class="pot"><dt>Pot</dt><dd id="lpot">…</dd></div>
         <div><dt id="bellhead">Bell in</dt><dd id="lbell">…</dd></div>
@@ -332,7 +333,7 @@ const PROGRAM = new PublicKey("HudNnA1fa7HWp8we7nZMGFNqpdR1Y8MEEp6BPFboDige");
 const LAUNCHLAB_PLATFORM = "DuWhz4JJ5Gk1dz7iAiHoQGMdEtaGGhkmV71MhvgSpxMy";
 const ROUTER = "J3n3w9kGszDox3nQzPvwdRdLxmGhvYc2F4WJ6cfVb8Yn";
 const UPGRADE_AUTH = "B6gKzoSCC6pW9Wgf3R2ujSkux3NELYDwwTw4u5v3X98W";
-const UPGRADE_TX = "2S271hoJpacxDUdVLzJeU47Ax96hggHPF1826pyWL8jxaSk6Z7PpmsNuMinvYZmJmsLATE5AL2LSd8mvj1yeVSbdUPE";
+const UPGRADE_TX = "3CvVSzLGR83tBTQG9cHAWMcDqBgAVeTLJz2WrAUqi7W8KwRQAUK5dzT4kRYngGGF7EuCykj31CRySs8TQXz1tzif";
 const TOKEN = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const TOKEN22 = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 const ATA = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
@@ -344,9 +345,9 @@ const GAMES = {
   0: ["Burn Race", "The coin with the most burned this round wins. Burns count as a share of each coin's own supply, so big and small supplies compete evenly."],
   1: ["Headcount", "The coin burned by the most different wallets this round wins. Size doesn't matter, numbers do."],
   2: ["Last Burn", "Whichever coin was burned last before the bell wins."],
-  3: ["Streak", "Plays by Burn Race rules for now: the coin with the most burned this round wins."],
-  4: ["Siege", "Plays by Burn Race rules for now: the coin with the most burned this round wins."],
-  5: ["Tug of War", "Plays by Burn Race rules for now: the coin with the most burned this round wins."],
+  3: ["Streak", "The coin with the longest run of back-to-back burns wins. Any other coin's burn breaks the run."],
+  4: ["Siege", "One coin holds the seat. Take it with a single burn bigger than its defence; the holder's own burns add to the defence. Whoever holds the seat at the bell wins."],
+  5: ["Tug of War", "Coins alternate between Red and Blue teams as they join. The team with more burned wins, and its top coin takes the round."],
 };
 const $ = id => document.getElementById(id);
 const conn = new Connection(RPC, "confirmed");
@@ -363,6 +364,7 @@ const vaultPda  = id => pda(enc("vault"), u64(id));
 const poolPda   = (id, i) => pda(enc("pool"), u64(id), Uint8Array.of(i));
 const champPda  = (id, mint) => pda(enc("champ"), u64(id), mint.toBytes());
 const entryPda  = (id, round, mint, who) => pda(enc("entry"), u64(id), u64(round), mint.toBytes(), who.toBytes());
+const gamePda   = id => pda(enc("game"), u64(id));
 const platformPda = pda(enc("platform"));
 const dv = d => new DataView(d.buffer, d.byteOffset, d.byteLength);
 const key = (d, o) => new PublicKey(d.slice(o, o + 32));
@@ -379,6 +381,9 @@ function decPool(d){ const v = dv(d), n = d[17], m = [];
   return { index: d[16], members: m }; }
 function decChamp(d){ const v = dv(d); return { round: Number(v.getBigUint64(8, true)),
   owner: key(d, 48).toBase58(), points: v.getBigUint64(80, true) }; }
+function decGame(d){ const v = dv(d); return { round: Number(v.getBigUint64(8, true)),
+  bestMint: key(d, 52).toBase58(), bestLen: v.getUint32(84, true),
+  seatMint: key(d, 88).toBase58(), seatBar: v.getBigUint64(120, true) }; }
 function decPlatform(d){ const v = dv(d); return { treasury: key(d, 40).toBase58(),
   joinFee: Number(v.getBigUint64(72, true)), platformBps: v.getUint16(80, true), paused: d[90] === 1 }; }
 function decMeta(d){ let o = 65; const v = dv(d);
@@ -392,16 +397,18 @@ async function many(keys){ const out = [];
 const sol = l => (l / 1e9).toLocaleString(undefined, { maximumFractionDigits: l >= 1e10 ? 2 : 4 }) + " SOL";
 const pctOfSupply = pts => (Number(pts) / 10000).toLocaleString(undefined, { maximumFractionDigits: 3 }) + "%";
 
-const S = { platform: null, leagues: {}, pools: {}, pots: {}, champs: {}, meta: {}, sel: LEAGUE_IDS[0], wallet: null, provider: null };
+const S = { platform: null, leagues: {}, pools: {}, pots: {}, champs: {}, games: {}, meta: {}, sel: LEAGUE_IDS[0], wallet: null, provider: null };
 
 async function load(){
   try {
-    const acc = await many([platformPda, ...LEAGUE_IDS.map(leaguePda), ...LEAGUE_IDS.map(vaultPda)]);
+    const acc = await many([platformPda, ...LEAGUE_IDS.map(leaguePda), ...LEAGUE_IDS.map(vaultPda), ...LEAGUE_IDS.map(gamePda)]);
     if (acc[0]) S.platform = decPlatform(acc[0].data);
     LEAGUE_IDS.forEach((id, i) => {
       if (acc[1 + i]) S.leagues[id] = decLeague(acc[1 + i].data);
       const vl = acc[1 + LEAGUE_IDS.length + i];
       S.pots[id] = vl ? Math.max(0, vl.lamports - RENT0) : 0;
+      const ga = acc[1 + 2 * LEAGUE_IDS.length + i];
+      S.games[id] = ga ? decGame(ga.data) : null;
     });
     const poolKeys = [], owners = [];
     for (const id of LEAGUE_IDS) { const L = S.leagues[id]; if (!L) continue;
@@ -444,7 +451,27 @@ function leader(id){
     for (const m of p.members) { const v = L.game === 1 ? BigInt(m.wallets) : m.score;
       if (v > bestV) { bestV = v; best = m.mint.toBase58(); } }
   if (L.game === 2 && L.lastBurn !== ZERO) best = L.lastBurn;
+  const g = S.games[id], live = g && g.round === L.round;
+  if (L.game === 3) best = live && g.bestMint !== ZERO ? g.bestMint : null;
+  if (L.game === 4) best = live && g.seatMint !== ZERO ? g.seatMint : null;
+  if (L.game === 5) { const t = teams(id); best = t.red > t.blue ? t.redTop : t.blue > t.red ? t.blueTop : null; }
   return best;
+}
+// Tug of War teams, by seat (pools hold 16, so seat parity is league-wide)
+function teams(id){
+  const r = { red: 0n, blue: 0n, redTop: null, blueTop: null, rt: 0n, bt: 0n };
+  for (const p of S.pools[id] ?? []) p.members.forEach((m, i) => {
+    if (i % 2 === 0) { r.red += m.score; if (m.score > r.rt) { r.rt = m.score; r.redTop = m.mint.toBase58(); } }
+    else { r.blue += m.score; if (m.score > r.bt) { r.bt = m.score; r.blueTop = m.mint.toBase58(); } } });
+  return r;
+}
+function gameLine(id){
+  const L = S.leagues[id], g = S.games[id], live = g && g.round === L.round;
+  const nm = k => { const md = S.meta[k]; return md?.symbol ? "$" + esc(md.symbol) : esc(md?.name ?? short(k)); };
+  if (L.game === 3) return live && g.bestLen ? `Longest run this round: ${nm(g.bestMint)}, ${g.bestLen} burns in a row.` : "No runs yet this round.";
+  if (L.game === 4) return live && g.seatMint !== ZERO ? `${nm(g.seatMint)} holds the seat. Defence: ${pctOfSupply(g.seatBar)} of supply in one burn.` : "The seat is empty. The first burn takes it.";
+  if (L.game === 5) { const t = teams(id); return `Red ${pctOfSupply(t.red)} vs Blue ${pctOfSupply(t.blue)} burned.`; }
+  return "";
 }
 
 function render(){
@@ -454,6 +481,7 @@ function render(){
   const id = S.sel, L = S.leagues[id]; if (!L) return;
   const g = GAMES[L.game] ?? GAMES[0];
   $("lname").textContent = g[0]; $("lrule").textContent = g[1];
+  const gl = gameLine(id); $("lgame").hidden = !gl; $("lgame").innerHTML = gl;
   $("lpot").textContent = sol(S.pots[id] ?? 0);
   $("lround").textContent = L.round;
   $("lcoins").textContent = `${L.tokenCount} / 128`;
@@ -634,6 +662,7 @@ $("bgo").onclick = async () => {
     { pubkey: poolPda(id, pool.index), isSigner: false, isWritable: true },
     { pubkey: entryPda(id, L.round, burnMint, S.wallet), isSigner: false, isWritable: true },
     { pubkey: champPda(id, burnMint), isSigner: false, isWritable: true },
+    { pubkey: gamePda(id), isSigner: false, isWritable: true },
     { pubkey: burnMint, isSigner: false, isWritable: true },
     { pubkey: new PublicKey($("burn").dataset.ata), isSigner: false, isWritable: true },
     { pubkey: S.wallet, isSigner: true, isWritable: true },
@@ -662,6 +691,7 @@ $("ring").onclick = async () => {
     { pubkey: leaguePda(id), isSigner: false, isWritable: true },
     { pubkey: vaultPda(id), isSigner: false, isWritable: true },
     { pubkey: champ, isSigner: false, isWritable: false },
+    { pubkey: gamePda(id), isSigner: false, isWritable: false },
     { pubkey: winner, isSigner: false, isWritable: true },
     { pubkey: S.wallet, isSigner: true, isWritable: true },
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
