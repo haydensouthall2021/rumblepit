@@ -122,6 +122,30 @@ dialog .row .btn{flex:1}
 .msg{margin:14px 0 0;font-size:14px;min-height:1.4em}
 .msg.bad{color:var(--bad)} .msg.good{color:var(--slime)}
 
+.launch{display:grid;grid-template-columns:260px 1fr;gap:32px;align-items:start}
+.drop{display:grid;place-items:center;aspect-ratio:1;border:2px dashed var(--rope);border-radius:50%;cursor:pointer;
+  color:var(--dust);text-align:center;font-size:14px;overflow:hidden;background:var(--ring);padding:18px}
+.drop:hover,.drop:focus-within{border-color:var(--slime)}
+.drop span{display:grid;place-items:center;width:100%;height:100%}
+.drop.has{padding:0;border-style:solid}
+.drop img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.fields .wide{grid-column:1/-1}
+.fields label{display:block;font-size:14px;color:var(--dust);margin-bottom:6px}
+.fields input,.fields textarea,.fields select{width:100%;background:var(--ring);color:var(--bone);border:1px solid var(--rope);
+  border-radius:6px;padding:11px 12px;font:inherit}
+.fields textarea{min-height:84px;resize:vertical}
+.fields input:focus,.fields textarea:focus,.fields select:focus{border-color:var(--slime);outline:none}
+.hint{color:var(--dust);font-size:13px;margin:6px 0 0}
+details.links summary{cursor:pointer;color:var(--dust);font-size:14px}
+details.links[open] summary{margin-bottom:12px}
+.cost{margin:18px 0 0;color:var(--dust);font-size:14px}
+.go{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:18px}
+.done{border:1px solid var(--slime);border-radius:10px;padding:18px;margin-top:20px;background:#0f1308}
+.done code{font-size:14px;word-break:break-all;color:var(--bone)}
+.done .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+@media (max-width:860px){ .launch{grid-template-columns:1fr} .drop{max-width:220px} .fields{grid-template-columns:1fr} }
 footer{border-top:1px solid var(--rope);padding:32px 0 48px;color:var(--dust);font-size:14px}
 footer p{max-width:70ch}
 
@@ -141,7 +165,7 @@ footer p{max-width:70ch}
 <header class="bar"><div class="wrap">
   <a class="brand" href="#top"><img src="img/logo.png" alt="">Rumble Pit</a>
   <nav class="nav" aria-label="Sections">
-    <a href="#leagues">Leagues</a><a href="#how">How it works</a><a href="#tokenomics">Tokenomics</a><a href="#proof">On-chain proof</a>
+    <a href="#leagues">Leagues</a><a href="#launch">Launch</a><a href="#how">How it works</a><a href="#tokenomics">Tokenomics</a><a href="#proof">On-chain proof</a>
   </nav>
   <button class="btn" id="wallet">Connect wallet</button>
 </div></header>
@@ -153,6 +177,7 @@ footer p{max-width:70ch}
   <p>Coins fight in leagues. Every six hours one coin wins the pot, and it goes straight to that coin's biggest burner.</p>
   <div class="row">
     <a class="btn" href="#leagues">See the leagues</a>
+    <a class="btn ghost" href="#launch">Launch a coin</a>
     <a class="btn ghost" href="https://x.com/rumblepitfun" target="_blank" rel="noopener">Follow @rumblepitfun</a>
   </div>
 </div>
@@ -199,7 +224,7 @@ footer p{max-width:70ch}
   <h2>How it works</h2>
   <p class="sub">No sign-ups and no claiming. Every step is a Solana transaction you can check.</p>
   <ol class="steps">
-    <li><h3>Launch</h3><p>A coin launches on Raydium LaunchLab through Rumble Pit, so it trades and shows on charts from the first buy.</p></li>
+    <li><h3>Launch</h3><p>Launch a coin from this page. It goes live on Raydium LaunchLab, so it trades and shows on charts from the first buy.</p></li>
     <li><h3>Join a league</h3><p>At launch the coin picks one league for life. A league holds up to 128 coins in pools of 16, all sharing one pot.</p></li>
     <li><h3>Burn to score</h3><p>Holders burn their coin to score for it. Burned tokens are destroyed for good. Each burn is at least <span id="floorpct">0.10%</span> of that coin's supply.</p></li>
     <li><h3>The bell</h3><p>Every six hours the round ends. Anyone can ring the bell; the program picks the winner and pays the pot in the same transaction.</p></li>
@@ -246,7 +271,29 @@ footer p{max-width:70ch}
 
 <section id="launch"><div class="wrap">
   <h2>Launch a coin</h2>
-  <p class="sub">Launching straight from this page isn't open yet. Follow <a href="https://x.com/rumblepitfun" target="_blank" rel="noopener">@rumblepitfun</a> to hear when it is.</p>
+  <p class="sub">Your coin goes live on Raydium and straight into the league you pick. It stays in that league for life. You earn 0.5% of every trade on it before graduation.</p>
+  <form class="launch" id="lform" novalidate>
+    <label class="drop" id="drop"><input type="file" id="fimg" accept="image/png,image/jpeg,image/webp,image/gif"><span id="dropmsg">Add an image<br><small>PNG, JPG, GIF or WebP, up to 2 MB</small></span></label>
+    <div>
+      <div class="fields">
+        <div><label for="fname">Name</label><input id="fname" maxlength="32" autocomplete="off" placeholder="Rumble Pit"></div>
+        <div><label for="fsym">Ticker</label><input id="fsym" maxlength="10" autocomplete="off" placeholder="RUMBLE"></div>
+        <div class="wide"><label for="fdesc">Description</label><textarea id="fdesc" maxlength="500" placeholder="What's your coin about?"></textarea></div>
+        <div><label for="fleague">League</label><select id="fleague"></select><p class="hint" id="fleaguehint"></p></div>
+        <div><label for="fbuy">Your first buy (SOL)</label><input id="fbuy" inputmode="decimal" placeholder="0" autocomplete="off">
+          <p class="hint">Bought in the same transaction that creates the coin, so nobody can buy before you. Leave blank to skip.</p></div>
+        <details class="links wide"><summary>Add links (optional)</summary>
+          <div class="fields">
+            <div><label for="fx">X</label><input id="fx" placeholder="https://x.com/…" autocomplete="off"></div>
+            <div><label for="ftg">Telegram</label><input id="ftg" placeholder="https://t.me/…" autocomplete="off"></div>
+            <div class="wide"><label for="fweb">Website</label><input id="fweb" placeholder="https://…" autocomplete="off"></div>
+          </div></details>
+      </div>
+      <p class="cost" id="fcost">Launching costs about 0.03 SOL in account deposits and network fees, plus your first buy.</p>
+      <div class="go"><button class="btn" id="fgo" type="submit">Launch coin</button><span class="msg" id="fmsg"></span></div>
+      <div class="done" id="fdone" hidden></div>
+    </div>
+  </form>
 </div></section>
 </main>
 
@@ -271,8 +318,14 @@ footer p{max-width:70ch}
 <script type="module">
 import { Buffer } from "https://esm.sh/buffer@6.0.3";
 window.Buffer = window.Buffer || Buffer;
-const { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram, ComputeBudgetProgram } =
-  await import("https://esm.sh/@solana/web3.js@1.98.0");
+import { makeLauncher } from "./launch.js";
+const web3 = await import("https://esm.sh/@solana/web3.js@1.98.0");
+const { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram, ComputeBudgetProgram,
+        Keypair, TransactionMessage, VersionedTransaction } = web3;
+const L8 = makeLauncher(web3, Buffer);
+const SIMULATE = new URLSearchParams(location.search).has("simulate");   // testing: simulate instead of sending
+const FN = "https://hmnznsdqjdqgrntcuylf.supabase.co/functions/v1/launch";
+const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtbnpuc2RxamRxZ3JudGN1eWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDc5MjMsImV4cCI6MjEwNTU4MzkyM30.0IeEdJByfjBdezGrv-9Jo1njSpNqB-nDJxbD6iEdps8";
 
 const RPC = "https://mainnet.helius-rpc.com/?api-key=14fe4366-ff04-452d-a864-040a0b82d050";
 const PROGRAM = new PublicKey("HudNnA1fa7HWp8we7nZMGFNqpdR1Y8MEEp6BPFboDige");
@@ -432,8 +485,18 @@ function render(){
       <td class="num">${score}</td><td>${top}</td>
       <td><button class="btn ghost" data-burn="${k}">Burn</button></td></tr>`; }).join("");
   $("standings").querySelectorAll("[data-burn]").forEach(b => b.onclick = () => openBurn(b.dataset.burn));
-  renderProof(); tick();
+  renderProof(); tick(); fillLeaguePicker();
 }
+function fillLeaguePicker(){
+  const sel = $("fleague"), keep = sel.value || "1";
+  sel.innerHTML = LEAGUE_IDS.map(id => { const L = S.leagues[id]; if (!L) return "";
+    const full = L.tokenCount >= 128;
+    return `<option value="${id}" ${full ? "disabled" : ""}>${(GAMES[L.game] ?? GAMES[0])[0]} (${L.tokenCount}/128${full ? ", full" : ""})</option>`; }).join("");
+  sel.value = keep;
+  const L = S.leagues[+sel.value];
+  $("fleaguehint").textContent = L ? (GAMES[L.game] ?? GAMES[0])[1] : "";
+}
+$("fleague").onchange = fillLeaguePicker;
 
 function tick(){
   const L = S.leagues[S.sel]; if (!L) return;
@@ -496,6 +559,33 @@ async function send(ixs){
   if (S.provider.signAndSendTransaction) sig = (await S.provider.signAndSendTransaction(tx)).signature;
   else sig = await conn.sendRawTransaction((await S.provider.signTransaction(tx)).serialize());
   const res = await conn.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed");
+  if (res.value.err) throw new Error("The transaction failed on-chain: " + JSON.stringify(res.value.err));
+  return sig;
+}
+async function sendV0(ixs, extraSigners = []){
+  const lut = (await conn.getAddressLookupTable(L8.LUT)).value;
+  const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
+  const tx = new VersionedTransaction(new TransactionMessage({ payerKey: S.wallet, recentBlockhash: blockhash, instructions: ixs }).compileToV0Message([lut]));
+  return { tx, size: tx.serialize().length, blockhash, lastValidBlockHeight, extraSigners };
+}
+async function submitV0(b){
+  if (SIMULATE) {
+    const r = await conn.simulateTransaction(b.tx, { sigVerify: false, replaceRecentBlockhash: true });
+    if (r.value.err) throw new Error("Simulation failed: " + JSON.stringify(r.value.err) + " " + (r.value.logs ?? []).slice(-3).join(" "));
+    return "simulated-" + r.value.unitsConsumed;
+  }
+  if (b.extraSigners.length) b.tx.sign(b.extraSigners);
+  let sig;
+  try {
+    if (!S.provider.signAndSendTransaction) throw new Error("no signAndSend");
+    sig = (await S.provider.signAndSendTransaction(b.tx)).signature;
+  } catch (e) {
+    if (/reject/i.test(String(e?.message ?? e))) throw e;
+    const signed = await S.provider.signTransaction(b.tx);          // some wallets only sign
+    if (b.extraSigners.length) signed.sign(b.extraSigners);
+    sig = await conn.sendRawTransaction(signed.serialize(), { maxRetries: 5 });
+  }
+  const res = await conn.confirmTransaction({ signature: sig, blockhash: b.blockhash, lastValidBlockHeight: b.lastValidBlockHeight }, "confirmed");
   if (res.value.err) throw new Error("The transaction failed on-chain: " + JSON.stringify(res.value.err));
   return sig;
 }
@@ -583,6 +673,96 @@ $("ring").onclick = async () => {
     await load();
   } catch (e) { $("ringmsg").className = "msg bad"; $("ringmsg").textContent = friendly(e); }
   finally { $("ring").disabled = false; }
+};
+
+// ── launch a coin
+let imgFile = null;
+$("fimg").onchange = () => {
+  const f = $("fimg").files[0]; if (!f) return;
+  if (f.size > 2 * 1024 * 1024) { fmsg("The image must be 2 MB or smaller.", true); return; }
+  imgFile = f;
+  const url = URL.createObjectURL(f);
+  $("drop").querySelector("span").innerHTML = `<img src="${url}" alt="Coin image preview">`; $("drop").classList.add("has");
+};
+$("fsym").oninput = () => { $("fsym").value = $("fsym").value.toUpperCase().replace(/[^A-Z0-9]/g, ""); };
+function fmsg(t, bad){ $("fmsg").className = "msg" + (bad ? " bad" : ""); $("fmsg").textContent = t; }
+
+$("lform").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const name = $("fname").value.trim(), symbol = $("fsym").value.trim(), leagueId = +$("fleague").value;
+  const buyTxt = $("fbuy").value.trim().replace(",", ".");
+  if (!imgFile) return fmsg("Add an image first.", true);
+  if (!name) return fmsg("Give the coin a name.", true);
+  if (!/^[A-Z0-9]{1,10}$/.test(symbol)) return fmsg("The ticker can only use letters and numbers, up to 10.", true);
+  if (buyTxt && !/^\d+(\.\d+)?$/.test(buyTxt)) return fmsg("Enter the first buy as a number of SOL, or leave it blank.", true);
+  const buy = buyTxt ? BigInt(Math.round(parseFloat(buyTxt) * 1e9)) : 0n;
+  if (buy > 10_000_000_000n) return fmsg("Keep the first buy to 10 SOL or less.", true);
+  if (!S.wallet) { await connect(); if (!S.wallet) return; }
+  const L = S.leagues[leagueId]; if (!L) return fmsg("Couldn't read that league. Try again in a moment.", true);
+  if (L.tokenCount >= 128) return fmsg("That league is full. Pick another.", true);
+  const bal = await conn.getBalance(S.wallet);
+  const need = Number(buy) + 0.03e9;
+  if (!SIMULATE && bal < need) return fmsg(`This wallet needs about ${(need / 1e9).toFixed(3)} SOL: your first buy plus about 0.03 SOL for deposits and fees.`, true);
+
+  // where the coin sits: the league's newest pool, or a new one if that is full
+  const pools = (S.pools[leagueId] ?? []).slice().sort((a, b) => a.index - b.index);
+  const last = pools.at(-1), openNew = !last || last.members.length >= 16;
+  const seat = openNew ? L.poolCount : last.index;
+
+  $("fgo").disabled = true; $("fdone").hidden = true;
+  try {
+    const mint = Keypair.generate();
+    fmsg("Saving your image and coin details…");
+    const fd = new FormData();
+    Object.entries({ mint: mint.publicKey.toBase58(), creator: S.wallet.toBase58(), name, symbol,
+      description: $("fdesc").value, twitter: $("fx").value, telegram: $("ftg").value, website: $("fweb").value,
+      league: String(leagueId) }).forEach(([k, v]) => fd.append(k, v));
+    fd.append("image", imgFile);
+    const up = await fetch(FN, { method: "POST", body: fd, headers: { Authorization: "Bearer " + ANON, apikey: ANON } });
+    const upj = await up.json().catch(() => ({}));
+    if (!up.ok) throw new Error(upj.error ?? "Couldn't save the coin details.");
+
+    const budget = [ComputeBudgetProgram.setComputeUnitLimit({ units: 420000 }), ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 })];
+    const create = [L8.initialize({ creator: S.wallet, mint: mint.publicKey, name, symbol, uri: upj.uri })];
+    if (buy > 0n) create.push(...L8.firstBuy({ creator: S.wallet, mint: mint.publicKey, lamports: buy }), L8.unwrap(S.wallet));
+    const join = L8.joinIxs({ joiner: S.wallet, mint: mint.publicKey, leagueId, seat, openNew, treasury: new PublicKey(S.platform.treasury) });
+
+    // one transaction if it fits, otherwise launch first and join straight after
+    let plan = [await sendV0([...budget, ...create, ...join], [mint])];
+    if (plan[0].size > 1232) plan = [await sendV0([...budget, ...create], [mint]), null];
+    fmsg(plan.length === 1 ? "Confirm in your wallet…" : "Confirm the launch in your wallet (1 of 2)…");
+    const sig1 = await submitV0(plan[0]);
+    let sig2 = null, joinErr = null;
+    if (plan.length === 2 && SIMULATE) sig2 = "skipped";
+    else if (plan.length === 2) {
+      fmsg("Launched. Now confirm joining the league (2 of 2)…");
+      try { sig2 = await submitV0(await sendV0([ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 }), ...join])); }
+      catch (e) { joinErr = e; }
+    }
+    const ca = mint.publicKey.toBase58();
+    $("fdone").hidden = false;
+    $("fdone").innerHTML = `<h3>${esc(name)} is live</h3>
+      <p class="note">Contract address</p><code id="ca">${ca}</code>
+      <p class="note">${joinErr ? "The coin is live, but joining the league didn't go through: " + esc(friendly(joinErr)) : "It's in " + esc((GAMES[L.game] ?? GAMES[0])[0]) + "."}</p>
+      <div class="row"><button class="btn" type="button" id="copyca">Copy address</button>
+      <a class="btn ghost" href="https://raydium.io/launchpad/token/?mint=${ca}" target="_blank" rel="noopener">Trade on Raydium</a>
+      <a class="btn ghost" href="https://dexscreener.com/solana/${ca}" target="_blank" rel="noopener">Chart</a>
+      ${sig1.startsWith("simulated") ? "" : `<a class="btn ghost" href="${solscan(sig1, "tx")}" target="_blank" rel="noopener">Transaction</a>`}</div>`;
+    $("copyca").onclick = () => navigator.clipboard.writeText(ca).then(() => { $("copyca").textContent = "Copied"; });
+    if (joinErr) {
+      const retry = document.createElement("button"); retry.type = "button"; retry.className = "btn"; retry.textContent = "Join the league now";
+      $("fdone").querySelector(".row").prepend(retry);
+      retry.onclick = async () => {
+        retry.disabled = true; fmsg("Confirm joining the league in your wallet…");
+        try { await submitV0(await sendV0([ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 }), ...join]));
+          retry.remove(); fmsg("Joined. Your coin is in the league."); await load(); }
+        catch (e) { fmsg(friendly(e), true); retry.disabled = false; }
+      };
+    }
+    fmsg(SIMULATE ? "Simulated only. Nothing was sent." : "");
+    if (!SIMULATE) await load();
+  } catch (e) { fmsg(friendly(e), true); }
+  finally { $("fgo").disabled = false; }
 };
 
 load(); setInterval(load, 20000); setInterval(tick, 1000);
