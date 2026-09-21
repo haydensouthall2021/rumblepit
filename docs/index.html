@@ -92,7 +92,8 @@ td.num,th.num{text-align:right}
 .coin{display:flex;align-items:center;gap:10px;min-width:0}
 .coin img,.coin i{width:34px;height:34px;border-radius:50%;background:var(--rope);flex:none;object-fit:cover}
 .coin b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22ch}
-.coin small{color:var(--dust)}
+.coin small{color:var(--dust);white-space:nowrap}
+th{white-space:nowrap}
 .lead td:first-child{color:var(--slime);font-weight:700}
 .empty{color:var(--dust);padding:24px 0}
 .tablewrap{overflow-x:auto}
@@ -212,7 +213,7 @@ footer p{max-width:70ch}
     <div>
       <div class="tablewrap" id="tablewrap">
         <table>
-          <thead><tr><th>#</th><th>Coin</th><th class="num" id="scorehead">Burned</th><th>Top burner</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>Coin</th><th class="num" id="scorehead">This round</th><th class="num">All-time burned</th><th>Top burner</th><th></th></tr></thead>
           <tbody id="standings"></tbody>
         </table>
       </div>
@@ -412,6 +413,9 @@ async function many(keys){ const out = [];
   for (let i = 0; i < keys.length; i += 100) out.push(...await conn.getMultipleAccountsInfo(keys.slice(i, i + 100)));
   return out; }
 const sol = l => (l / 1e9).toLocaleString(undefined, { maximumFractionDigits: l >= 1e10 ? 2 : 4 }) + " SOL";
+const START_SUPPLY = 1_000_000_000_000_000n;   // 1B tokens at 6 decimals — every Rumble Pit coin starts here
+const allTime = md => { if (!md?.supply) return "–"; const b = START_SUPPLY > md.supply ? START_SUPPLY - md.supply : 0n;
+  return (Number(b) / 1e13).toLocaleString(undefined, { maximumFractionDigits: 3 }) + "%"; };
 const pctOfSupply = pts => (Number(pts) / 10000).toLocaleString(undefined, { maximumFractionDigits: 3 }) + "%";
 
 const S = { platform: null, leagues: {}, pools: {}, pots: {}, champs: {}, games: {}, meta: {}, sel: LEAGUE_IDS[0], wallet: null, provider: null };
@@ -446,6 +450,8 @@ async function loadChampsAndMeta(){
   if (!mints.length) return;
   const champs = await many(champKeys); S.champs = {};
   champs.forEach((a, i) => { if (a) S.champs[owners[i] + ":" + mints[i].toBase58()] = decChamp(a.data); });
+  const known = [...new Map(mints.filter(m => S.meta[m.toBase58()]).map(m => [m.toBase58(), m])).values()];
+  if (known.length) (await many(known)).forEach((a, i) => { if (a) S.meta[known[i].toBase58()].supply = dv(a.data).getBigUint64(36, true); });
   const need = [...new Map(mints.filter(m => !S.meta[m.toBase58()]).map(m => [m.toBase58(), m])).values()];
   if (!need.length) return;
   const metaKeys = need.map(m => PublicKey.findProgramAddressSync([enc("metadata"), META.toBytes(), m.toBytes()], META)[0]);
@@ -506,7 +512,7 @@ function render(){
   $("lcoins").textContent = `${L.tokenCount} / 128`;
   $("lpaid").textContent = sol(Number(L.paid));
   $("ldone").textContent = L.settled;
-  $("scorehead").textContent = L.game === 1 ? "Wallets" : "Burned";
+  $("scorehead").textContent = L.game === 1 ? "Wallets this round" : "This round";
   $("laddr").innerHTML = `League ${link(leaguePda(id).toBase58(), "account", short(leaguePda(id).toBase58()))} · Pot ${link(vaultPda(id).toBase58(), "account", short(vaultPda(id).toBase58()))}`;
   if (S.platform) {
     $("paused").hidden = !S.platform.paused;
@@ -524,12 +530,12 @@ function render(){
     const k = m.mint.toBase58(), md = S.meta[k] ?? { name: short(k), symbol: "" };
     const c = S.champs[id + ":" + k];
     const top = c && c.round === L.round && c.points > 0n
-      ? `<span class="addr">${link(c.owner, "account", short(c.owner))}</span>` : `<span class="addr">No burns yet</span>`;
+      ? `<span class="addr">${link(c.owner, "account", short(c.owner))}</span>` : `<span class="addr">–</span>`;
     const score = L.game === 1 ? m.wallets : pctOfSupply(m.score);
     const img = md.image ? `<img src="${esc(md.image)}" alt="" loading="lazy">` : `<i></i>`;
     return `<tr class="${k === lead ? "lead" : ""}"><td>${i + 1}</td>
       <td><div class="coin">${img}<div><b>${esc(md.name)}</b><small>${md.symbol ? "$" + esc(md.symbol) + " · " : ""}<span class="addr">${link(k, "token", short(k))}</span></small></div></div></td>
-      <td class="num">${score}</td><td>${top}</td>
+      <td class="num">${score}</td><td class="num">${allTime(md)}</td><td>${top}</td>
       <td><button class="btn ghost" data-burn="${k}">Burn</button></td></tr>`; }).join("");
   $("standings").querySelectorAll("[data-burn]").forEach(b => b.onclick = () => openBurn(b.dataset.burn));
   renderProof(); tick(); fillLeaguePicker();
