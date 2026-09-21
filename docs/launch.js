@@ -12,6 +12,7 @@ export function makeLauncher(web3, Buffer) {
   const META      = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
   const LEAGUE    = new PublicKey("HudNnA1fa7HWp8we7nZMGFNqpdR1Y8MEEp6BPFboDige");
   const LUT       = new PublicKey("AcL1Vo8oy1ULiavEcjSUcwfBSForXMudcZvDZy5nzJkU");   // Raydium's lookup table
+  const OUR_LUT   = new PublicKey("Go1mZuDFMR4eyJG3QPcnmR87pzRE1UjwPsPzHPY6YxV1");   // Rumble Pit's: our fixed addresses
 
   const b = s => Buffer.from(s, "utf8");
   const ll = seeds => PublicKey.findProgramAddressSync(seeds, LAUNCHLAB)[0];
@@ -94,5 +95,5 @@ export function makeLauncher(web3, Buffer) {
     return ixs;
   }
 
-  return { initialize, firstBuy, unwrap, joinIxs, poolOf, LUT, WSOL };
+  return { initialize, firstBuy, unwrap, joinIxs, poolOf, LUT, OUR_LUT, WSOL };
 }

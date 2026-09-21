@@ -299,7 +299,7 @@ footer p{max-width:70ch}
         <div class="wide"><label for="fdesc">Description</label><textarea id="fdesc" maxlength="500" placeholder="What's your coin about?"></textarea></div>
         <div><label for="fleague">League</label><select id="fleague"></select><p class="hint" id="fleaguehint"></p></div>
         <div><label for="fbuy">Your first buy (SOL)</label><input id="fbuy" inputmode="decimal" placeholder="0" autocomplete="off">
-          <p class="hint">Bought straight after your coin is created, before it's listed anywhere. Leave blank to skip.</p></div>
+          <p class="hint">Bought in the same transaction that creates your coin, so nobody can buy before you. Leave blank to skip.</p></div>
         <details class="links wide"><summary>Add links (optional)</summary>
           <div class="fields">
             <div><label for="fx">X</label><input id="fx" placeholder="https://x.com/…" autocomplete="off"></div>
@@ -612,9 +612,9 @@ async function send(ixs){
   return sig;
 }
 async function sendV0(ixs, extraSigners = []){
-  const lut = (await conn.getAddressLookupTable(L8.LUT)).value;
+  const luts = (await Promise.all([L8.LUT, L8.OUR_LUT].map(k => conn.getAddressLookupTable(k)))).map(r => r.value).filter(Boolean);
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
-  const tx = new VersionedTransaction(new TransactionMessage({ payerKey: S.wallet, recentBlockhash: blockhash, instructions: ixs }).compileToV0Message([lut]));
+  const tx = new VersionedTransaction(new TransactionMessage({ payerKey: S.wallet, recentBlockhash: blockhash, instructions: ixs }).compileToV0Message(luts));
   return { tx, size: tx.serialize().length, blockhash, lastValidBlockHeight, extraSigners };
 }
 function why(v){ const l = (v.logs ?? []).find(x => /Error Message:/.test(x)); return l ? l.split("Error Message:")[1].trim() : JSON.stringify(v.err); }
@@ -779,37 +779,36 @@ $("lform").onsubmit = async (ev) => {
     const create = [L8.initialize({ creator: S.wallet, mint: mint.publicKey, name, symbol, uri: upj.uri })];
     const join = L8.joinIxs({ joiner: S.wallet, mint: mint.publicKey, leagueId, seat, openNew, treasury: new PublicKey(S.platform.treasury) });
 
-    // Keep each transaction small (Phantom warns on ones near Solana's size limit):
-    // 1) create the coin, with the first buy if it fits comfortably; 2) join the league.
+    // Step 1 creates the coin and makes the creator's first buy in the SAME transaction,
+    // so nobody can buy before the creator. Joining the league is step 2 — or folded into
+    // step 1 when there's no first buy, since that still fits comfortably.
     const buyIxs = buy > 0n ? [...L8.firstBuy({ creator: S.wallet, mint: mint.publicKey, lamports: buy }), L8.unwrap(S.wallet)] : [];
-    let first = await sendV0([...budget, create[0], ...buyIxs], [mint]);
-    let buyLater = false;
-    if (buyIxs.length && first.size > 1000) { first = await sendV0([...budget, create[0]], [mint]); buyLater = true; }
-    const secondIxs = [ComputeBudgetProgram.setComputeUnitLimit({ units: 300000 }), ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 }),
-                       ...(buyLater ? buyIxs : []), ...join];
-    fmsg("Confirm creating your coin in your wallet (1 of 2)…");
+    const solo = buyIxs.length === 0;
+    const first = await sendV0(solo ? [...budget, create[0], ...join] : [...budget, create[0], ...buyIxs], [mint]);
+    const secondIxs = [ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 }), ...join];
+    fmsg(solo ? "Confirm in your wallet…" : "Confirm creating your coin and your first buy (1 of 2)…");
     const sig1 = await submitV0(first);
     let sig2 = null, joinErr = null;
-    if (SIMULATE) sig2 = "skipped";            // step 2 can't be simulated before the coin exists
+    if (solo || SIMULATE) sig2 = "done";            // step 2 can't be simulated before the coin exists
     else {
-      fmsg(buyLater ? "Coin created. Now confirm your first buy and joining the league (2 of 2)…" : "Coin created. Now confirm joining the league (2 of 2)…");
+      fmsg("Coin created and bought. Now confirm joining the league (2 of 2)…");
       try { sig2 = await submitV0(await sendV0(secondIxs)); } catch (e) { joinErr = e; }
     }
     const ca = mint.publicKey.toBase58();
     $("fdone").hidden = false;
     $("fdone").innerHTML = `<h3>${esc(name)} is live</h3>
       <p class="note">Contract address</p><code id="ca">${ca}</code>
-      <p class="note">${joinErr ? "The coin is live, but step 2 didn't go through: " + esc(friendly(joinErr)) : "It's in " + esc((GAMES[L.game] ?? GAMES[0])[0]) + "."}</p>
+      <p class="note">${joinErr ? "The coin is live, but joining the league didn't go through: " + esc(friendly(joinErr)) : "It's in " + esc((GAMES[L.game] ?? GAMES[0])[0]) + "."}</p>
       <div class="row"><button class="btn" type="button" id="copyca">Copy address</button>
       <a class="btn ghost" href="https://raydium.io/launchpad/token/?mint=${ca}" target="_blank" rel="noopener">Trade on Raydium</a>
       <a class="btn ghost" href="https://dexscreener.com/solana/${ca}" target="_blank" rel="noopener">Chart</a>
       ${sig1.startsWith("simulated") ? "" : `<a class="btn ghost" href="${solscan(sig1, "tx")}" target="_blank" rel="noopener">Transaction</a>`}</div>`;
     $("copyca").onclick = () => navigator.clipboard.writeText(ca).then(() => { $("copyca").textContent = "Copied"; });
     if (joinErr) {
-      const retry = document.createElement("button"); retry.type = "button"; retry.className = "btn"; retry.textContent = "Finish step 2";
+      const retry = document.createElement("button"); retry.type = "button"; retry.className = "btn"; retry.textContent = "Join the league now";
       $("fdone").querySelector(".row").prepend(retry);
       retry.onclick = async () => {
-        retry.disabled = true; fmsg("Confirm step 2 in your wallet…");
+        retry.disabled = true; fmsg("Confirm joining the league in your wallet…");
         try { await submitV0(await sendV0(secondIxs));
           retry.remove(); fmsg("Joined. Your coin is in the league."); await load(); }
         catch (e) { fmsg(friendly(e), true); retry.disabled = false; }
