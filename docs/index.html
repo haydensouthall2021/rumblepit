@@ -98,7 +98,7 @@ h2{font-family:var(--disp);font-weight:700;font-size:clamp(26px,3.6vw,40px);lett
 .leagues{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 @media(max-width:900px){.leagues{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.leagues{grid-template-columns:1fr}}
-.lg{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;
+.lg{font:inherit;color:inherit;text-align:left;width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;
   transition:.15s;position:relative}
 .lg:hover{border-color:var(--line2);transform:translateY(-2px)}
 .lg.on{border-color:var(--lime);box-shadow:0 0 0 1px var(--lime) inset}
@@ -132,8 +132,9 @@ h2{font-family:var(--disp);font-weight:700;font-size:clamp(26px,3.6vw,40px);lett
 .row .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .sm{font-size:12px;color:var(--tx3)}
 .row .sc{text-align:right;font-weight:600}
-.row .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
-.row .bar i{display:block;height:100%;background:var(--lime)}
+.row .bar{display:block;width:100%;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.row .shc{display:block;width:100%}
+.row .bar i{display:block;height:100%;background:var(--lime);transition:width .4s}
 .row.lead .bar i{background:var(--pink)}
 .rowh{font-size:11.5px;color:var(--tx3);font-weight:600;padding:10px 24px;border-bottom:1px solid var(--line);
   display:grid;grid-template-columns:34px 1fr 90px 90px;gap:10px}
@@ -153,6 +154,13 @@ h2{font-family:var(--disp);font-weight:700;font-size:clamp(26px,3.6vw,40px);lett
 .smsg{font-size:13px;color:var(--tx2);margin-top:12px;min-height:38px}
 .smsg.ok{color:var(--lime)}
 .smsg.bad{color:var(--pink)}
+.empty{padding:46px 24px;text-align:center}
+.empty b{font-family:var(--disp);font-weight:700;font-size:20px;display:block;margin-bottom:8px;letter-spacing:-.02em}
+.empty p{color:var(--tx2);font-size:14.5px;max-width:42ch;margin:0 auto 18px}
+.mode{display:inline-flex;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:3px;gap:3px}
+.mode button{font:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:7px;border:none;background:transparent;color:var(--tx2);cursor:pointer}
+.mode button.on{background:var(--card2);color:var(--tx)}
+.pvtag{display:inline-block;font-size:11px;font-weight:700;color:var(--pink);border:1px solid var(--pink-d);padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:middle}
 .champ{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--tx2)}
 .champ b{color:var(--tx)}
 
@@ -312,7 +320,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 80px;margin-top:30px}
       </div>
     </div>
   </div>
-  <p style="font-size:13px;color:var(--tx3);margin:14px 0 0">These leagues are a live demo running in your browser — the coins and rivals are simulated so you can feel how a round plays. Nothing is spent.</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px"><p style="font-size:13px;color:var(--tx3);margin:0" id="modenote">Showing live state. No coins have joined yet — the program isn't deployed.</p><div class="mode"><button id="m-live" class="on">Live</button><button id="m-prev">Preview a round</button></div></div>
 </div></section>
 
 <section id="how"><div class="w">
@@ -446,112 +454,164 @@ var LEAGUES=[
  {k:"SIEGE", n:"Siege", r:"One coin holds the seat. The rest burn to take it.", m:"Score", how:"Burn to attack the holder. Take the seat and defend it to the bell."},
  {k:"TUG", n:"Tug of War", r:"Odd pools pull against even pools. Half the league wins.", m:"Score", how:"Your pool pulls as a team. Out-burn the other side."}
 ];
-var NAMES=["Bonk Jr","Wojak","Gigachad","Pepe Sol","Moon Cat","DogBrain","Retardio","Goose","Fwog","Popcat","Mew","Ponke","Chud","Nub","Toly","Myro"];
+var NAMES=["Bonk Jr","Wojak","Gigachad","Pepe Sol","Moon Cat","Fwog","Popcat","Mew","Ponke","Chud","Nub","Myro","Goose","Retardio","Toly","Slerf"];
 var COLS=["#C6FF3D","#FF3D8B","#7C5CFF","#3DD9FF","#FFB23D","#3DFF9E"];
+var ROUND=21600;
 function S(n){return (Math.abs(n)<10?n.toFixed(3):n.toFixed(2))+" SOL";}
 function mm(s){s=Math.max(0,Math.floor(s));var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
   return (h?h+"h ":"")+String(m).padStart(2,"0")+"m "+String(x).padStart(2,"0")+"s";}
 var $=function(i){return document.getElementById(i);};
 
-// each league gets its own simulated field of coins
-var L=LEAGUES.map(function(d,i){
-  var coins=[];var n=8+Math.floor(Math.random()*8);
-  for(var j=0;j<n;j++){coins.push({name:NAMES[(i*3+j)%NAMES.length],
-    tick:"$"+NAMES[(i*3+j)%NAMES.length].replace(/\s/g,"").toUpperCase().slice(0,5),
-    col:COLS[(i+j)%COLS.length],score:Math.random()*400,wallets:1+Math.floor(Math.random()*40)});}
-  return {d:d,coins:coins,pot:1.5+Math.random()*9,left:3600+Math.random()*18000,total:21600,burned:Math.random()*4};
-});
-var sel=0, mult=1, mineCoin=null, myPts=0;
+var mode="live", sel=0, mult=1, mine=null;
+var L=[];
 
-function sorted(lg){
-  var key=lg.d.k==="HEADCOUNT"?"wallets":"score";
-  return lg.coins.slice().sort(function(a,b){return b[key]-a[key];});
+function build(preview){
+  L=LEAGUES.map(function(d,i){
+    var coins=[];
+    if(preview){
+      var n=7+((i*5)%9);
+      for(var j=0;j<n;j++){var nm=NAMES[(i*3+j)%NAMES.length];
+        coins.push({name:nm,tick:"$"+nm.replace(/\s/g,"").toUpperCase().slice(0,5),
+          col:COLS[(i+j)%COLS.length],score:20+Math.random()*380,wallets:1+Math.floor(Math.random()*40)});}
+    }
+    return {d:d,coins:coins,pot:preview?1.5+Math.random()*9:0,left:3600+((i*2711)%18000),burned:preview?Math.random()*3:0};
+  });
+  mine=null;
 }
 
-function renderCards(){
+// ── cards: built ONCE, then only their text is updated.
+// Rebuilding them every tick destroyed the element under the cursor mid-click,
+// which is why clicks were landing on nothing.
+function buildCards(){
   $("lgs").innerHTML=L.map(function(lg,i){
-    var hot=lg.left<1800;
-    return '<div class="lg'+(i===sel?' on':'')+'" data-i="'+i+'">'+
+    return '<button class="lg" data-i="'+i+'" type="button">'+
       '<div class="gt">'+lg.d.k+'</div><h3>'+lg.d.n+'</h3>'+
       '<p class="rule">'+lg.d.r+'</p>'+
-      '<div class="pot">'+S(lg.pot)+'</div>'+
-      '<div class="foot"><span><b>'+lg.coins.length+'</b> coins</span>'+
-      '<span class="ends'+(hot?' hot':'')+'">'+mm(lg.left)+'</span></div></div>';
+      '<div class="pot" data-f="pot"></div>'+
+      '<div class="foot"><span><b data-f="n"></b> coins</span><span class="ends" data-f="t"></span></div></button>';
   }).join("");
   document.querySelectorAll(".lg").forEach(function(el){
-    el.onclick=function(){sel=Number(el.dataset.i);mineCoin=null;myPts=0;renderAll();
-      $("arena").scrollIntoView({behavior:"smooth",block:"nearest"});};
+    el.addEventListener("click",function(){
+      sel=Number(el.dataset.i); mine=null;
+      $("a-msg").textContent=""; $("a-msg").className="smsg";
+      updateCards(); buildArena();
+    });
+  });
+}
+function updateCards(){
+  document.querySelectorAll(".lg").forEach(function(el){
+    var i=Number(el.dataset.i), lg=L[i];
+    el.classList.toggle("on", i===sel);
+    el.querySelector('[data-f="pot"]').textContent=lg.coins.length?S(lg.pot):"Empty";
+    el.querySelector('[data-f="pot"]').style.color=lg.coins.length?"":"var(--tx3)";
+    el.querySelector('[data-f="n"]').textContent=lg.coins.length;
+    var t=el.querySelector('[data-f="t"]');
+    t.textContent=lg.coins.length?mm(lg.left):"Waiting for coins";
+    t.classList.toggle("hot", lg.coins.length>0 && lg.left<1800);
   });
 }
 
-function renderArena(){
-  var lg=L[sel], s=sorted(lg), top=s[0];
-  var key=lg.d.k==="HEADCOUNT"?"wallets":"score";
-  var maxv=Math.max(1,top?top[key]:1);
+function key(lg){return lg.d.k==="HEADCOUNT"?"wallets":"score";}
+function sorted(lg){var k=key(lg);return lg.coins.slice().sort(function(a,b){return b[k]-a[k];});}
+
+// ── arena: structure rebuilt only on league change or a burn, never on a timer
+function buildArena(){
+  var lg=L[sel];
   $("a-kind").textContent=lg.d.k+" · "+lg.coins.length+" coins";
-  $("a-name").textContent=lg.d.n;
-  $("a-clk").textContent=mm(lg.left);
-  $("a-clk").className="clk"+(lg.left<1800?" hot":"");
+  $("a-name").innerHTML=lg.d.n+(mode==="preview"?'<span class="pvtag">PREVIEW</span>':"");
   $("a-metric").textContent=lg.d.m;
   $("a-how").textContent=lg.d.how;
+
+  if(!lg.coins.length){
+    $("a-rows").innerHTML='<div class="empty"><b>No coins in this league yet</b>'+
+      '<p>The first coin to launch into '+lg.d.n+' opens the round. Its fees start the pot, and every coin after it is fighting for everything the league has earned.</p>'+
+      '<a href="#launch" class="btn lime">Launch the first coin</a></div>';
+    $("a-coin").innerHTML='<option>No coins yet</option>'; $("a-coin").disabled=true;
+    $("a-burn").disabled=true;
+    $("a-champ").textContent="";
+    return;
+  }
+  $("a-coin").disabled=false; $("a-burn").disabled=false;
+  var s=sorted(lg), k=key(lg), top=s[0].score>0||s[0].wallets>0?s[0]:null;
+  var total=s.reduce(function(a,c){return a+c[k];},0)||1;
   $("a-rows").innerHTML=s.map(function(c,i){
-    var v=c[key];
-    return '<div class="row'+(i===0?' lead':'')+(c===mineCoin?' me':'')+'">'+
+    var v=c[k], share=v/total*100;
+    return '<div class="row'+(i===0?' lead':'')+(c===mine?' me':'')+'">'+
       '<span class="rk">'+(i+1)+'</span>'+
       '<span class="tk"><span class="av" style="background:'+c.col+'"></span>'+
         '<span style="min-width:0"><span class="nm">'+c.name+'</span><br><span class="sm">'+c.tick+'</span></span></span>'+
-      '<span class="sc">'+(key==="wallets"?v:Math.round(v))+'</span>'+
-      '<span><span class="bar"><i style="width:'+(v/maxv*100).toFixed(0)+'%"></i></span></span></div>';
+      '<span class="sc">'+(k==="wallets"?v:Math.round(v))+'</span>'+
+      '<span class="shc"><span class="bar"><i style="width:'+share.toFixed(1)+'%"></i></span>'+
+        '<span class="sm" style="display:block;text-align:right;margin-top:3px">'+share.toFixed(1)+'%</span></span></div>';
   }).join("");
-  var sel_el=$("a-coin"), cur=sel_el.value;
-  sel_el.innerHTML=s.map(function(c){return '<option value="'+c.name+'">'+c.name+' ('+c.tick+')</option>';}).join("");
-  if(cur && s.some(function(c){return c.name===cur;})) sel_el.value=cur;
-  $("a-champ").innerHTML=top?('Leading: <b>'+top.name+'</b> — if the round ended now, its biggest burner would be paid <b>'+S(lg.pot)+'</b>.'):"";
+  var cur=$("a-coin").value;
+  $("a-coin").innerHTML=s.map(function(c){return '<option value="'+c.name+'">'+c.name+' ('+c.tick+')</option>';}).join("");
+  if(s.some(function(c){return c.name===cur;})) $("a-coin").value=cur;
+  $("a-champ").innerHTML=top?('Leading: <b>'+top.name+'</b>. If the round ended now, its biggest burner would be paid <b>'+S(lg.pot)+'</b>.'):"";
+}
+function updateArenaClock(){
+  var lg=L[sel];
+  $("a-clk").textContent=lg.coins.length?mm(lg.left):"—";
+  $("a-clk").className="clk"+(lg.coins.length&&lg.left<1800?" hot":"");
 }
 
-function renderHero(){
+function updateHero(){
   var pot=L.reduce(function(a,l){return a+l.pot;},0);
   var coins=L.reduce(function(a,l){return a+l.coins.length;},0);
   var burn=L.reduce(function(a,l){return a+l.burned;},0)/L.length;
-  var next=Math.min.apply(null,L.map(function(l){return l.left;}));
+  var live=L.filter(function(l){return l.coins.length;});
   $("h-pot").textContent=S(pot);
   $("h-coins").textContent=coins;
   $("h-burn").textContent=burn.toFixed(2)+"%";
-  $("h-next").textContent=mm(next).replace(/ \d+s$/,"");
+  $("h-next").textContent=live.length?mm(Math.min.apply(null,live.map(function(l){return l.left;}))).replace(/ \d+s$/,""):"—";
 }
 
-function renderAll(){renderCards();renderArena();renderHero();}
-
+var sinceBoard=0;
 function tick(){
   L.forEach(function(lg){
-    lg.left-=0.5; lg.pot+=0.0009;
-    if(Math.random()<0.25){var c=lg.coins[Math.floor(Math.random()*lg.coins.length)];
-      c.score+=2+Math.random()*9; if(Math.random()<.2)c.wallets++; lg.burned+=0.002;}
-    if(lg.left<=0){ lg.left=lg.total; lg.pot=0.6+Math.random()*2;
+    if(!lg.coins.length)return;
+    lg.left-=1; lg.pot+=0.0015;
+    if(mode==="preview" && Math.random()<0.35){
+      var c=lg.coins[Math.floor(Math.random()*lg.coins.length)];
+      c.score+=2+Math.random()*9; if(Math.random()<.2)c.wallets++; lg.burned+=0.003;
+    }
+    if(lg.left<=0){ lg.left=ROUND; lg.pot=0.6+Math.random()*2;
       lg.coins.forEach(function(c){c.score=Math.random()*20;c.wallets=Math.floor(Math.random()*5);}); }
   });
-  renderAll();
+  updateCards(); updateArenaClock(); updateHero();
+  // the leaderboard reorders every few seconds, not every tick, so it stays readable
+  if(++sinceBoard>=4){sinceBoard=0; if(mode==="preview") buildArena();}
 }
+
+function setMode(m){
+  mode=m;
+  $("m-live").classList.toggle("on",m==="live");
+  $("m-prev").classList.toggle("on",m==="preview");
+  $("modenote").textContent=m==="live"
+    ? "Showing live state. No coins have joined yet — the program isn't deployed."
+    : "Preview: sample coins and simulated rivals, so you can see how a round plays. Nothing here is real or spent.";
+  build(m==="preview"); buildCards(); updateCards(); buildArena(); updateArenaClock(); updateHero();
+}
+$("m-live").onclick=function(){setMode("live");};
+$("m-prev").onclick=function(){setMode("preview");};
 
 $("a-amt").querySelectorAll("button").forEach(function(b){
   b.onclick=function(){$("a-amt").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
     b.classList.add("on");mult=Number(b.dataset.m);};
 });
 $("a-burn").onclick=function(){
-  var lg=L[sel], name=$("a-coin").value;
-  var c=lg.coins.find(function(x){return x.name===name;}); if(!c)return;
-  var pts=6*mult; c.score+=pts; if(c!==mineCoin){c.wallets++;} mineCoin=c; myPts+=pts; lg.burned+=0.01*mult;
-  var s=sorted(lg), rank=s.indexOf(c)+1;
-  var m=$("a-msg");
+  var lg=L[sel], c=lg.coins.find(function(x){return x.name===$("a-coin").value;}); if(!c)return;
+  var pts=6*mult; c.score+=pts; if(c!==mine)c.wallets++; mine=c; lg.burned+=0.01*mult;
+  var rank=sorted(lg).indexOf(c)+1, m=$("a-msg");
   m.className="smsg "+(rank===1?"ok":"");
   m.textContent=rank===1?("You pushed "+c.name+" into first. Hold it to the bell."):
     ("Burned for "+c.name+" — now #"+rank+". "+(rank<=3?"Close.":"Keep going."));
-  renderAll();
+  buildArena(); updateCards(); updateHero();
 };
 
 // launch form
 var fl=0;
-$("f-lg").innerHTML=LEAGUES.map(function(d,i){return '<button data-i="'+i+'"'+(i===0?' class="on"':'')+'>'+d.n+'</button>';}).join("");
+$("f-lg").innerHTML=LEAGUES.map(function(d,i){return '<button type="button" data-i="'+i+'"'+(i===0?' class="on"':'')+'>'+d.n+'</button>';}).join("");
 $("f-lg").querySelectorAll("button").forEach(function(b){
   b.onclick=function(){$("f-lg").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
     b.classList.add("on");fl=Number(b.dataset.i);$("p-lg").textContent=LEAGUES[fl].n;};
@@ -563,7 +623,7 @@ $("f-go").onclick=function(){
   var m=$("f-msg");
   if(!$("f-name").value.trim()||!$("f-tick").value.trim()){m.className="smsg bad";m.textContent="Give it a name and a ticker first.";return;}
   m.className="smsg";
-  m.textContent="Launching isn't live yet — the program is built but not deployed. When it is, this button creates your coin and joins it to "+LEAGUES[fl].n+" in one transaction.";
+  m.textContent="Launching isn't live yet — the program is built but not deployed. When it is, this creates your coin and joins it to "+LEAGUES[fl].n+" in one transaction.";
 };
 
 $("wallet").onclick=async function(){
@@ -574,8 +634,8 @@ $("wallet").onclick=async function(){
     this.textContent=k.slice(0,4)+"\u2026"+k.slice(-4);}catch(e){}
 };
 
-renderAll();
-setInterval(tick,500);
+setMode("live");
+setInterval(tick,1000);
 })();
 </script>
 </body>
