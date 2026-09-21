@@ -477,7 +477,9 @@ function gameLine(id){
 function render(){
   $("tabs").innerHTML = LEAGUE_IDS.map(id => { const g = GAMES[S.leagues[id]?.game ?? 0];
     return `<button class="tab" role="tab" aria-selected="${id === S.sel}" data-id="${id}"><b>${g[0]}</b><span>${sol(S.pots[id] ?? 0)} pot</span></button>`; }).join("");
-  $("tabs").querySelectorAll(".tab").forEach(b => b.onclick = () => { S.sel = +b.dataset.id; render(); });
+  $("tabs").querySelectorAll(".tab").forEach(b => b.onclick = () => {
+    if (S.sel !== +b.dataset.id) { $("ringmsg").textContent = ""; $("ringmsg").className = "msg"; }   // messages belong to one league
+    S.sel = +b.dataset.id; render(); });
   const id = S.sel, L = S.leagues[id]; if (!L) return;
   const g = GAMES[L.game] ?? GAMES[0];
   $("lname").textContent = g[0]; $("lrule").textContent = g[1];
