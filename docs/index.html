@@ -146,6 +146,12 @@ details.links[open] summary{margin-bottom:12px}
 .done code{font-size:14px;word-break:break-all;color:var(--bone)}
 .done .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 @media (max-width:860px){ .launch{grid-template-columns:1fr} .drop{max-width:220px} .fields{grid-template-columns:1fr} }
+.house{display:flex;align-items:center;gap:18px;flex-wrap:wrap;border:1px solid var(--rope);border-radius:10px;padding:16px 18px;margin:0 0 28px;background:var(--ring)}
+.house img{width:56px;height:56px;border-radius:50%}
+.house .who{flex:1;min-width:220px}
+.house .who b{font:700 22px/1.1 var(--display);display:block}
+.house code{font-size:13px;color:var(--dust);word-break:break-all}
+.house .row{display:flex;gap:8px;flex-wrap:wrap}
 footer{border-top:1px solid var(--rope);padding:32px 0 48px;color:var(--dust);font-size:14px}
 footer p{max-width:70ch}
 
@@ -183,6 +189,17 @@ footer p{max-width:70ch}
 </div>
 
 <div class="wrap">
+  <div class="house">
+    <img src="img/logo.png" alt="">
+    <div class="who"><b>$RUMBLE</b><span class="note" style="margin:0">Our own coin, launched on Rumble Pit and playing in Burn Race.</span><br>
+      <code id="rumbleca">AGyjfmSq4u2QrGcfZnLCGDzvnHfjZEQfDWmpjuogKxMc</code></div>
+    <div class="row">
+      <button class="btn" type="button" id="copyrumble">Copy address</button>
+      <a class="btn ghost" href="https://raydium.io/launchpad/token/?mint=AGyjfmSq4u2QrGcfZnLCGDzvnHfjZEQfDWmpjuogKxMc" target="_blank" rel="noopener">Trade</a>
+      <a class="btn ghost" href="https://dexscreener.com/solana/AGyjfmSq4u2QrGcfZnLCGDzvnHfjZEQfDWmpjuogKxMc" target="_blank" rel="noopener">Chart</a>
+      <a class="btn ghost" href="https://gmgn.ai/sol/token/AGyjfmSq4u2QrGcfZnLCGDzvnHfjZEQfDWmpjuogKxMc" target="_blank" rel="noopener">GMGN</a>
+    </div>
+  </div>
   <p class="notice" id="paused" hidden>New coins can't join leagues right now. Burns and payouts still work.</p>
   <p class="notice" id="rpcerr" hidden>Couldn't reach Solana just now. Retrying every 20 seconds.</p>
 </div>
@@ -804,6 +821,7 @@ $("lform").onsubmit = async (ev) => {
   finally { $("fgo").disabled = false; }
 };
 
+$("copyrumble").onclick = () => navigator.clipboard.writeText($("rumbleca").textContent).then(() => { $("copyrumble").textContent = "Copied"; setTimeout(() => $("copyrumble").textContent = "Copy address", 1500); });
 load(); setInterval(load, 20000); setInterval(tick, 1000);
 </script>
 </body>
