@@ -282,7 +282,7 @@ footer p{max-width:70ch}
         <div class="wide"><label for="fdesc">Description</label><textarea id="fdesc" maxlength="500" placeholder="What's your coin about?"></textarea></div>
         <div><label for="fleague">League</label><select id="fleague"></select><p class="hint" id="fleaguehint"></p></div>
         <div><label for="fbuy">Your first buy (SOL)</label><input id="fbuy" inputmode="decimal" placeholder="0" autocomplete="off">
-          <p class="hint">Bought in the same transaction that creates the coin, so nobody can buy before you. Leave blank to skip.</p></div>
+          <p class="hint">Bought straight after your coin is created, before it's listed anywhere. Leave blank to skip.</p></div>
         <details class="links wide"><summary>Add links (optional)</summary>
           <div class="fields">
             <div><label for="fx">X</label><input id="fx" placeholder="https://x.com/…" autocomplete="off"></div>
@@ -583,6 +583,8 @@ async function send(ixs){
   tx.feePayer = S.wallet;
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
   tx.recentBlockhash = blockhash;
+  const pre = await conn.simulateTransaction(tx);
+  if (pre.value.err) throw new Error("This transaction would fail: " + why(pre.value));
   let sig;
   if (S.provider.signAndSendTransaction) sig = (await S.provider.signAndSendTransaction(tx)).signature;
   else sig = await conn.sendRawTransaction((await S.provider.signTransaction(tx)).serialize());
@@ -596,22 +598,24 @@ async function sendV0(ixs, extraSigners = []){
   const tx = new VersionedTransaction(new TransactionMessage({ payerKey: S.wallet, recentBlockhash: blockhash, instructions: ixs }).compileToV0Message([lut]));
   return { tx, size: tx.serialize().length, blockhash, lastValidBlockHeight, extraSigners };
 }
+function why(v){ const l = (v.logs ?? []).find(x => /Error Message:/.test(x)); return l ? l.split("Error Message:")[1].trim() : JSON.stringify(v.err); }
 async function submitV0(b){
-  if (SIMULATE) {
-    const r = await conn.simulateTransaction(b.tx, { sigVerify: false, replaceRecentBlockhash: true });
-    if (r.value.err) throw new Error("Simulation failed: " + JSON.stringify(r.value.err) + " " + (r.value.logs ?? []).slice(-3).join(" "));
-    return "simulated-" + r.value.unitsConsumed;
-  }
-  if (b.extraSigners.length) b.tx.sign(b.extraSigners);
+  // Phantom warns when it can't predict what a transaction will do, so check it ourselves first:
+  // a transaction that would fail never reaches the wallet.
+  const pre = await conn.simulateTransaction(b.tx, { sigVerify: false, replaceRecentBlockhash: true });
+  if (pre.value.err) throw new Error("This transaction would fail: " + why(pre.value));
+  if (SIMULATE) return "simulated-" + pre.value.unitsConsumed;
   let sig;
-  try {
-    if (!S.provider.signAndSendTransaction) throw new Error("no signAndSend");
-    sig = (await S.provider.signAndSendTransaction(b.tx)).signature;
-  } catch (e) {
-    if (/reject/i.test(String(e?.message ?? e))) throw e;
-    const signed = await S.provider.signTransaction(b.tx);          // some wallets only sign
-    if (b.extraSigners.length) signed.sign(b.extraSigners);
+  if (b.extraSigners.length) {
+    // Phantom's guidance for transactions with more than one signer: the wallet signs first,
+    // then the other signer (here, the new coin's one-time key), then we send it.
+    const signed = await S.provider.signTransaction(b.tx);
+    signed.sign(b.extraSigners);
     sig = await conn.sendRawTransaction(signed.serialize(), { maxRetries: 5 });
+  } else if (S.provider.signAndSendTransaction) {
+    sig = (await S.provider.signAndSendTransaction(b.tx)).signature;
+  } else {
+    sig = await conn.sendRawTransaction((await S.provider.signTransaction(b.tx)).serialize(), { maxRetries: 5 });
   }
   const res = await conn.confirmTransaction({ signature: sig, blockhash: b.blockhash, lastValidBlockHeight: b.lastValidBlockHeight }, "confirmed");
   if (res.value.err) throw new Error("The transaction failed on-chain: " + JSON.stringify(res.value.err));
@@ -754,37 +758,40 @@ $("lform").onsubmit = async (ev) => {
 
     const budget = [ComputeBudgetProgram.setComputeUnitLimit({ units: 420000 }), ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 })];
     const create = [L8.initialize({ creator: S.wallet, mint: mint.publicKey, name, symbol, uri: upj.uri })];
-    if (buy > 0n) create.push(...L8.firstBuy({ creator: S.wallet, mint: mint.publicKey, lamports: buy }), L8.unwrap(S.wallet));
     const join = L8.joinIxs({ joiner: S.wallet, mint: mint.publicKey, leagueId, seat, openNew, treasury: new PublicKey(S.platform.treasury) });
 
-    // one transaction if it fits, otherwise launch first and join straight after
-    let plan = [await sendV0([...budget, ...create, ...join], [mint])];
-    if (plan[0].size > 1232) plan = [await sendV0([...budget, ...create], [mint]), null];
-    fmsg(plan.length === 1 ? "Confirm in your wallet…" : "Confirm the launch in your wallet (1 of 2)…");
-    const sig1 = await submitV0(plan[0]);
+    // Keep each transaction small (Phantom warns on ones near Solana's size limit):
+    // 1) create the coin, with the first buy if it fits comfortably; 2) join the league.
+    const buyIxs = buy > 0n ? [...L8.firstBuy({ creator: S.wallet, mint: mint.publicKey, lamports: buy }), L8.unwrap(S.wallet)] : [];
+    let first = await sendV0([...budget, create[0], ...buyIxs], [mint]);
+    let buyLater = false;
+    if (buyIxs.length && first.size > 1000) { first = await sendV0([...budget, create[0]], [mint]); buyLater = true; }
+    const secondIxs = [ComputeBudgetProgram.setComputeUnitLimit({ units: 300000 }), ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 }),
+                       ...(buyLater ? buyIxs : []), ...join];
+    fmsg("Confirm creating your coin in your wallet (1 of 2)…");
+    const sig1 = await submitV0(first);
     let sig2 = null, joinErr = null;
-    if (plan.length === 2 && SIMULATE) sig2 = "skipped";
-    else if (plan.length === 2) {
-      fmsg("Launched. Now confirm joining the league (2 of 2)…");
-      try { sig2 = await submitV0(await sendV0([ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 }), ...join])); }
-      catch (e) { joinErr = e; }
+    if (SIMULATE) sig2 = "skipped";            // step 2 can't be simulated before the coin exists
+    else {
+      fmsg(buyLater ? "Coin created. Now confirm your first buy and joining the league (2 of 2)…" : "Coin created. Now confirm joining the league (2 of 2)…");
+      try { sig2 = await submitV0(await sendV0(secondIxs)); } catch (e) { joinErr = e; }
     }
     const ca = mint.publicKey.toBase58();
     $("fdone").hidden = false;
     $("fdone").innerHTML = `<h3>${esc(name)} is live</h3>
       <p class="note">Contract address</p><code id="ca">${ca}</code>
-      <p class="note">${joinErr ? "The coin is live, but joining the league didn't go through: " + esc(friendly(joinErr)) : "It's in " + esc((GAMES[L.game] ?? GAMES[0])[0]) + "."}</p>
+      <p class="note">${joinErr ? "The coin is live, but step 2 didn't go through: " + esc(friendly(joinErr)) : "It's in " + esc((GAMES[L.game] ?? GAMES[0])[0]) + "."}</p>
       <div class="row"><button class="btn" type="button" id="copyca">Copy address</button>
       <a class="btn ghost" href="https://raydium.io/launchpad/token/?mint=${ca}" target="_blank" rel="noopener">Trade on Raydium</a>
       <a class="btn ghost" href="https://dexscreener.com/solana/${ca}" target="_blank" rel="noopener">Chart</a>
       ${sig1.startsWith("simulated") ? "" : `<a class="btn ghost" href="${solscan(sig1, "tx")}" target="_blank" rel="noopener">Transaction</a>`}</div>`;
     $("copyca").onclick = () => navigator.clipboard.writeText(ca).then(() => { $("copyca").textContent = "Copied"; });
     if (joinErr) {
-      const retry = document.createElement("button"); retry.type = "button"; retry.className = "btn"; retry.textContent = "Join the league now";
+      const retry = document.createElement("button"); retry.type = "button"; retry.className = "btn"; retry.textContent = "Finish step 2";
       $("fdone").querySelector(".row").prepend(retry);
       retry.onclick = async () => {
-        retry.disabled = true; fmsg("Confirm joining the league in your wallet…");
-        try { await submitV0(await sendV0([ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 }), ...join]));
+        retry.disabled = true; fmsg("Confirm step 2 in your wallet…");
+        try { await submitV0(await sendV0(secondIxs));
           retry.remove(); fmsg("Joined. Your coin is in the league."); await load(); }
         catch (e) { fmsg(friendly(e), true); retry.disabled = false; }
       };
