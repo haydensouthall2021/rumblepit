@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rumble Pit — coins fight, burners get paid</title>
-<meta name="description" content="Launch a coin on Solana and put it in a league. Every six hours one coin wins the pot, paid straight to its biggest burner.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rumble Pit — coins fight in leagues on Solana</title>
+<meta name="description" content="Launch a coin, join a league, burn to score. Every six hours one coin wins the pot, paid on-chain to its biggest burner.">
 <meta property="og:title" content="Rumble Pit">
-<meta property="og:description" content="Every six hours one coin wins the pot, paid straight to its biggest burner.">
+<meta property="og:description" content="Coins fight in leagues. Every six hours one wins the pot, paid on-chain to its biggest burner.">
 <meta property="og:image" content="https://rumblepit.fun/img/og.jpg">
 <meta property="og:url" content="https://rumblepit.fun">
 <meta name="twitter:card" content="summary_large_image">
@@ -19,225 +19,291 @@
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Archivo:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --pit:#050407; --ring:#0f0d16; --rope:#221e30;
-  --slime:#c6f52b; --gold:#e0b04a; --violet:#9d5cff;
-  --bone:#f1efe6; --dust:#9b97a8; --bad:#ff5a6e;
-  --display:"Big Shoulders Display",Impact,"Arial Narrow",sans-serif;
-  --body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --pit:#050407; --ring:#0e0c14; --rope:#1c1826; --bone:#f2efe6; --dust:#9b96a8;
+  --slime:#c8f52b; --gold:#e0ad3c; --violet:#9d5cff; --bad:#ff5a6e;
+  --display:"Big Shoulders Display", Impact, "Arial Narrow", sans-serif;
+  --body:"Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
-*{box-sizing:border-box;margin:0}
-html{background:var(--pit);color:var(--bone);font:16px/1.55 var(--body);-webkit-font-smoothing:antialiased}
-body{min-height:100vh}
-img{max-width:100%;display:block}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--pit);color:var(--bone);font:16px/1.55 var(--body);font-variant-numeric:tabular-nums;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
 a{color:var(--slime)}
-button{font:inherit;cursor:pointer}
+img{max-width:100%;display:block}
 :focus-visible{outline:2px solid var(--slime);outline-offset:3px}
-.num{font-variant-numeric:tabular-nums}
-.wrap{width:min(1120px,100% - 40px);margin-inline:auto}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
 
-/* header */
-header{position:sticky;top:0;z-index:20;background:rgba(5,4,7,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--rope)}
-header .wrap{display:flex;align-items:center;gap:24px;height:64px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--bone);font:900 22px/1 var(--display);letter-spacing:.02em}
+.bar{position:sticky;top:0;z-index:20;background:rgba(5,4,7,.88);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--rope);padding-top:env(safe-area-inset-top,0px)}
+.bar .wrap{display:flex;align-items:center;gap:20px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--bone);
+  font:900 24px/1 var(--display);letter-spacing:.01em}
 .brand img{width:40px;height:40px}
-nav{display:flex;gap:20px;margin-left:auto}
-nav a{color:var(--dust);text-decoration:none;font-weight:500}
-nav a:hover{color:var(--bone)}
-.btn{display:inline-block;border:0;border-radius:999px;padding:11px 20px;font-weight:700;background:var(--slime);color:#0a0a0a;text-decoration:none;text-align:center}
+.nav{display:flex;gap:18px;margin-left:auto}
+.nav a{color:var(--dust);text-decoration:none;font-weight:500;font-size:15px}
+.nav a:hover{color:var(--bone)}
+.btn{display:inline-block;text-decoration:none;border:0;border-radius:6px;padding:11px 18px;font-weight:700;font-size:15px;background:var(--slime);color:#0a0a05}
 .btn:hover{filter:brightness(1.08)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.ghost{background:transparent;color:var(--bone);box-shadow:inset 0 0 0 1.5px var(--rope)}
-.btn.ghost:hover{box-shadow:inset 0 0 0 1.5px var(--dust)}
-#wallet.on{background:var(--ring);color:var(--slime);box-shadow:inset 0 0 0 1.5px var(--slime)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+.btn.ghost{background:transparent;color:var(--bone);box-shadow:inset 0 0 0 1px var(--rope)}
+.btn.ghost:hover{box-shadow:inset 0 0 0 1px var(--dust)}
+#wallet{white-space:nowrap;margin-left:auto}
+.nav + #wallet{margin-left:0}
 
-/* hero: the banner is the one loud thing on the page */
-.hero{position:relative;overflow:hidden}
-.hero img{width:100%;height:auto;max-height:82vh;object-fit:cover;object-position:center 40%}
-.hero::after{content:"";position:absolute;inset:auto 0 0;height:14%;background:linear-gradient(transparent,var(--pit))}
-.intro{padding:28px 0 48px;max-width:640px}
-.intro p{font-size:clamp(18px,2.2vw,22px);line-height:1.45}
-.intro .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+.hero{position:relative;background:#000}
+.hero img{width:100%;max-height:64vh;object-fit:cover;object-position:center 30%}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:30%;background:linear-gradient(transparent,var(--pit))}
+.lede{position:relative;z-index:1;margin-top:-54px;padding-bottom:40px}
+.lede p{font:700 clamp(22px,3.2vw,34px)/1.18 var(--display);max-width:24ch;margin:0 0 20px;letter-spacing:.005em}
+.lede .row{display:flex;gap:12px;flex-wrap:wrap}
 
-.notice{border:1px solid var(--gold);color:var(--gold);border-radius:12px;padding:14px 18px;margin-bottom:28px}
+.notice{border-left:3px solid var(--gold);background:var(--ring);padding:12px 16px;margin:0 0 28px;font-size:15px}
 .notice[hidden]{display:none}
 
-h2{font:900 clamp(40px,6vw,64px)/.95 var(--display);letter-spacing:.01em;margin-bottom:12px}
-section{padding:56px 0}
-.lede{color:var(--dust);max-width:62ch}
+section{padding:56px 0;border-top:1px solid var(--rope)}
+h2{font:900 clamp(34px,5vw,56px)/.95 var(--display);margin:0 0 10px;letter-spacing:.005em}
+h3{font:700 22px/1.1 var(--display);margin:0 0 6px;letter-spacing:.01em}
+.sub{color:var(--dust);max-width:62ch;margin:0 0 28px}
 
-/* league selector — reads like a fight card */
-.card-tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--rope);border:1px solid var(--rope);border-radius:14px;overflow:hidden;margin:28px 0 0}
-.card-tabs button{background:var(--ring);border:0;color:var(--dust);padding:14px 12px;text-align:left}
-.card-tabs button b{display:block;font:700 20px/1.1 var(--display);color:var(--bone);letter-spacing:.02em}
-.card-tabs button span{font-size:13px}
-.card-tabs button[aria-selected=true]{background:#17131f;box-shadow:inset 0 -3px 0 var(--slime)}
-.card-tabs button[aria-selected=true] b{color:var(--slime)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:22px;scrollbar-width:thin}
+.tab{flex:0 0 auto;background:var(--ring);color:var(--dust);border:1px solid var(--rope);border-radius:6px;padding:10px 14px;text-align:left;min-width:132px}
+.tab b{display:block;font:700 19px/1.1 var(--display);color:var(--bone)}
+.tab span{font-size:13px}
+.tab[aria-selected="true"]{border-color:var(--slime);background:#12160a}
+.tab[aria-selected="true"] span{color:var(--slime)}
 
-.bout{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;margin-top:24px}
-.bout-head{background:var(--ring);border:1px solid var(--rope);border-radius:18px;padding:26px}
-.bout-head h3{font:900 44px/1 var(--display);margin-bottom:6px}
-.bout-head .rule{color:var(--dust);max-width:48ch}
-.facts{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:8px 36px;margin-top:22px}
+.card{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:start}
+.bell{background:var(--ring);border:1px solid var(--rope);border-radius:10px;padding:22px}
+.bell .rule{margin:0 0 18px;max-width:52ch}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:0}
+.facts div{border-top:1px solid var(--rope);padding-top:10px}
 .facts dt{color:var(--dust);font-size:13px}
-.facts dd{font:700 26px/1.1 var(--display);letter-spacing:.02em}
-.pot{color:var(--gold)}
-.bell{background:var(--ring);border:1px solid var(--rope);border-radius:18px;padding:26px;display:flex;flex-direction:column;justify-content:space-between;gap:16px}
-.clock{font:900 clamp(56px,8vw,84px)/.9 var(--display);color:var(--slime);letter-spacing:.01em}
-.bell small{color:var(--dust)}
+.facts dd{margin:2px 0 0;font:700 28px/1.1 var(--display)}
+.facts .pot dd{color:var(--gold)}
+.prize{margin:18px 0 0;color:var(--dust);font-size:14px}
+#ring{margin-top:16px}
 
-table{width:100%;border-collapse:collapse;margin-top:24px}
-th{color:var(--dust);font-weight:500;font-size:13px;text-align:left;padding:10px 12px;border-bottom:1px solid var(--rope)}
-td{padding:12px;border-bottom:1px solid var(--rope);vertical-align:middle}
-td.rank{font:900 24px/1 var(--display);color:var(--dust);width:44px}
-tr.lead td.rank{color:var(--slime)}
-.coin{display:flex;align-items:center;gap:12px}
-.coin img,.coin .ph{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--rope);flex:none}
-.coin .ph{display:grid;place-items:center;font:900 18px var(--display);color:var(--slime)}
-.coin b{display:block}
-.coin span{color:var(--dust);font-size:13px}
-td .btn{padding:8px 16px}
-.empty{padding:40px 12px;color:var(--dust);text-align:center;border-bottom:1px solid var(--rope)}
-.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{color:var(--dust);font-weight:500;font-size:13px;text-align:left;padding:0 8px 8px;border-bottom:1px solid var(--rope)}
+td{padding:10px 8px;border-bottom:1px solid var(--rope);vertical-align:middle}
+td.num,th.num{text-align:right}
+.coin{display:flex;align-items:center;gap:10px;min-width:0}
+.coin img,.coin i{width:34px;height:34px;border-radius:50%;background:var(--rope);flex:none;object-fit:cover}
+.coin b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22ch}
+.coin small{color:var(--dust)}
+.lead td:first-child{color:var(--slime);font-weight:700}
+.empty{color:var(--dust);padding:24px 0}
+.tablewrap{overflow-x:auto}
+.addr{font-size:14px;color:var(--dust)}
+.addr a{color:var(--dust)}
 
-/* how it works — a real sequence, so it is numbered */
-.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:32px;counter-reset:s}
-.steps li{list-style:none;counter-increment:s}
-.steps li::before{content:counter(s);display:block;font:900 56px/1 var(--display);color:var(--slime);margin-bottom:8px}
-.steps b{display:block;font:700 22px/1.2 var(--display);letter-spacing:.02em;margin-bottom:6px}
-.steps p{color:var(--dust)}
-.split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
-.split p+p{margin-top:12px}
-.split .lede b{color:var(--bone)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s}
+.steps li::before{content:counter(s);display:block;font:900 44px/1 var(--display);color:var(--slime);margin-bottom:8px}
+.steps p{margin:0;color:var(--dust)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+.ledger td{padding:9px 0}
+.ledger td:last-child{text-align:right;font-weight:700}
+.ledger tr.total td{border-bottom:0;color:var(--slime)}
+.note{color:var(--dust);font-size:14px;margin:12px 0 0}
+.proof td:first-child{color:var(--bone);padding-right:16px;white-space:nowrap}
+.proof td:last-child{font-size:14px;word-break:break-all}
+.proof a{color:var(--dust)}
+.proof a:hover{color:var(--slime)}
+
+dialog{background:var(--ring);color:var(--bone);border:1px solid var(--rope);border-radius:12px;padding:24px;width:min(440px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+dialog label{display:block;font-size:14px;color:var(--dust);margin:16px 0 6px}
+dialog input{width:100%;background:var(--pit);color:var(--bone);border:1px solid var(--rope);border-radius:6px;padding:12px;font:inherit}
+dialog .row{display:flex;gap:10px;margin-top:18px}
+dialog .row .btn{flex:1}
+.msg{margin:14px 0 0;font-size:14px;min-height:1.4em}
+.msg.bad{color:var(--bad)} .msg.good{color:var(--slime)}
 
 footer{border-top:1px solid var(--rope);padding:32px 0 48px;color:var(--dust);font-size:14px}
-footer .wrap{display:flex;gap:24px;flex-wrap:wrap;justify-content:space-between}
-footer a{color:var(--dust)}
-
-/* burn dialog */
-dialog{background:var(--ring);color:var(--bone);border:1px solid var(--rope);border-radius:20px;padding:28px;width:min(440px,92vw)}
-dialog::backdrop{background:rgba(0,0,0,.7)}
-dialog h3{font:900 34px/1 var(--display);margin-bottom:4px}
-dialog label{display:block;color:var(--dust);font-size:13px;margin:18px 0 6px}
-dialog input{width:100%;background:var(--pit);border:1.5px solid var(--rope);border-radius:12px;color:var(--bone);padding:13px 14px;font:700 20px var(--body)}
-dialog input:focus{border-color:var(--slime);outline:0}
-.row{display:flex;justify-content:space-between;gap:12px;color:var(--dust);font-size:14px;margin-top:8px}
-.row b{color:var(--bone);font-weight:500}
-.msg{margin-top:14px;font-size:14px;min-height:20px}
-.msg.bad{color:var(--bad)} .msg.ok{color:var(--slime)}
-.dlg-actions{display:flex;gap:10px;margin-top:20px}
-.dlg-actions .btn{flex:1}
-.pick{display:grid;gap:10px;margin-top:16px}
-.pick button{background:var(--pit);color:var(--bone);border:1.5px solid var(--rope);border-radius:12px;padding:14px;font-weight:700;text-align:left}
-.pick button:hover{border-color:var(--slime)}
+footer p{max-width:70ch}
 
 @media (max-width:860px){
-  nav{display:none}
-  .card-tabs{grid-template-columns:repeat(3,1fr)}
-  .bout,.split{grid-template-columns:1fr}
+  .nav{display:none}
+  .card,.split{grid-template-columns:1fr}
   .steps{grid-template-columns:1fr 1fr}
-  .hide-sm{display:none}
+  .lede{margin-top:-24px}
+  .proof td:first-child{white-space:normal}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:520px){ .facts dd{font-size:22px} .steps{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
 </style>
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <a class="brand" href="#"><img src="img/logo.png" alt="" width="40" height="40">Rumble Pit</a>
-    <nav><a href="#leagues">Leagues</a><a href="#how">How it works</a><a href="#fees">Fees</a></nav>
-    <button class="btn" id="wallet">Connect wallet</button>
+
+<header class="bar"><div class="wrap">
+  <a class="brand" href="#top"><img src="img/logo.png" alt="">Rumble Pit</a>
+  <nav class="nav" aria-label="Sections">
+    <a href="#leagues">Leagues</a><a href="#how">How it works</a><a href="#tokenomics">Tokenomics</a><a href="#proof">On-chain proof</a>
+  </nav>
+  <button class="btn" id="wallet">Connect wallet</button>
+</div></header>
+
+<main id="top">
+<div class="hero"><img src="img/banner.jpg" alt="Rumble Pit: a crowned frog boxer in a Solana arena"></div>
+
+<div class="wrap lede">
+  <p>Coins fight in leagues. Every six hours one coin wins the pot, and it goes straight to that coin's biggest burner.</p>
+  <div class="row">
+    <a class="btn" href="#leagues">See the leagues</a>
+    <a class="btn ghost" href="https://x.com/rumblepitfun" target="_blank" rel="noopener">Follow @rumblepitfun</a>
   </div>
-</header>
+</div>
 
-<div class="hero"><img src="img/banner.jpg" alt="Rumble Pit — a crowned frog in a Solana arena" width="1256" height="775"></div>
+<div class="wrap">
+  <p class="notice" id="paused" hidden>New coins can't join leagues right now. Burns and payouts still work.</p>
+  <p class="notice" id="rpcerr" hidden>Couldn't reach Solana just now. Retrying every 20 seconds.</p>
+</div>
 
-<main class="wrap">
-  <div class="intro">
-    <p>Launch a coin and put it in a league. Every six hours one coin wins the pot, and the whole pot goes to that coin's biggest burner. Paid on-chain, nothing to claim.</p>
-    <div class="actions"><a class="btn" href="#leagues">See the leagues</a><a class="btn ghost" href="https://x.com/rumblepitfun" target="_blank" rel="noopener">Follow on X</a></div>
-  </div>
-
-  <p class="notice" id="notice" hidden></p>
-
-  <section id="leagues">
-    <h2>The leagues</h2>
-    <p class="lede">Everything here is read live from the Solana program. Nothing is simulated.</p>
-    <div class="card-tabs" role="tablist" id="tabs"></div>
-    <div id="bout"></div>
-  </section>
-
-  <section id="how">
-    <h2>How a round works</h2>
-    <ol class="steps">
-      <li><b>Launch</b><p>A coin launches on Raydium LaunchLab and trades from its first second, so it shows up on DexScreener and every wallet straight away.</p></li>
-      <li><b>Join a league</b><p>At launch the coin picks one of six leagues, for good. Up to 128 coins share a league and its pot.</p></li>
-      <li><b>Burn to back it</b><p>Holders burn the coin to score for it. Burned tokens are destroyed forever, which also cuts the supply.</p></li>
-      <li><b>The bell</b><p>After six hours the league's rules pick one winning coin. Its single biggest burner that round gets the entire pot.</p></li>
-    </ol>
-  </section>
-
-  <section id="fees" class="split">
+<section id="leagues"><div class="wrap">
+  <h2>Leagues</h2>
+  <p class="sub">Six leagues, one pot each. Everything below is read live from the Solana program.</p>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="card">
     <div>
-      <h2>Where the money comes from</h2>
+      <div class="tablewrap" id="tablewrap">
+        <table>
+          <thead><tr><th>#</th><th>Coin</th><th class="num" id="scorehead">Burned</th><th>Top burner</th><th></th></tr></thead>
+          <tbody id="standings"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="empty" hidden>No coins have joined this league yet. The first coin in takes the first seat.</p>
     </div>
-    <div class="lede">
-      <p>Every trade on a Rumble Pit coin pays <b>1.5%</b>. <b>0.5%</b> goes to the coin's creator. <b>1%</b> goes to its league, where the program splits it <b>half to the pot, half to the platform</b>. That split is enforced on-chain.</p>
-      <p>Launching is free. When a coin graduates, 100% of its liquidity is burned, so nobody can pull it.</p>
-      <p>Anyone can ring the bell once a round is over, and the program alone decides who is paid. Pausing the platform can't stop a payout.</p>
+    <div class="bell">
+      <h3 id="lname">Loading</h3>
+      <p class="rule" id="lrule"></p>
+      <dl class="facts">
+        <div class="pot"><dt>Pot</dt><dd id="lpot">…</dd></div>
+        <div><dt id="bellhead">Bell in</dt><dd id="lbell">…</dd></div>
+        <div><dt>Round</dt><dd id="lround">…</dd></div>
+        <div><dt>Coins</dt><dd id="lcoins">…</dd></div>
+        <div><dt>Paid out</dt><dd id="lpaid">…</dd></div>
+        <div><dt>Rounds done</dt><dd id="ldone">…</dd></div>
+      </dl>
+      <p class="prize">The pot goes to the one wallet that burned the most of the winning coin this round. If nobody burns, it rolls into the next round.</p>
+      <button class="btn" id="ring" hidden>Ring the bell and pay the winner</button>
+      <p class="msg" id="ringmsg"></p>
+      <p class="addr" id="laddr"></p>
     </div>
-  </section>
+  </div>
+</div></section>
 
-  <section id="launch" class="split">
-    <div><h2>Launch a coin</h2></div>
-    <div class="lede"><p>Launching straight from this page is being finished now. Follow <a href="https://x.com/rumblepitfun" target="_blank" rel="noopener">@rumblepitfun</a> to hear when it opens.</p></div>
-  </section>
+<section id="how"><div class="wrap">
+  <h2>How it works</h2>
+  <p class="sub">No sign-ups and no claiming. Every step is a Solana transaction you can check.</p>
+  <ol class="steps">
+    <li><h3>Launch</h3><p>A coin launches on Raydium LaunchLab through Rumble Pit, so it trades and shows on charts from the first buy.</p></li>
+    <li><h3>Join a league</h3><p>At launch the coin picks one league for life. A league holds up to 128 coins in pools of 16, all sharing one pot.</p></li>
+    <li><h3>Burn to score</h3><p>Holders burn their coin to score for it. Burned tokens are destroyed for good. Each burn is at least <span id="floorpct">0.10%</span> of that coin's supply.</p></li>
+    <li><h3>The bell</h3><p>Every six hours the round ends. Anyone can ring the bell; the program picks the winner and pays the pot in the same transaction.</p></li>
+  </ol>
+</div></section>
+
+<section id="tokenomics"><div class="wrap">
+  <h2>Tokenomics</h2>
+  <p class="sub">Every coin launched on Rumble Pit uses the same terms. Nobody gets a hidden allocation, including us.</p>
+  <div class="split">
+    <div>
+      <h3>Every coin</h3>
+      <table class="ledger"><tbody>
+        <tr><td>Total supply</td><td>1,000,000,000</td></tr>
+        <tr><td>Sold on the bonding curve</td><td>793,100,000</td></tr>
+        <tr><td>Added to the Raydium pool at graduation</td><td>206,900,000</td></tr>
+        <tr><td>Graduates when the curve raises</td><td>85 SOL</td></tr>
+        <tr><td>Team or platform allocation</td><td>None</td></tr>
+        <tr><td>Liquidity at graduation</td><td>100% burned</td></tr>
+      </tbody></table>
+      <p class="note">Burning the liquidity means nobody, including the coin's creator and us, can ever pull it.</p>
+    </div>
+    <div>
+      <h3>Fees on each trade before graduation</h3>
+      <table class="ledger"><tbody>
+        <tr><td>Rumble Pit</td><td>1.00%</td></tr>
+        <tr><td>The coin's creator</td><td>0.50%</td></tr>
+        <tr><td>Raydium (LaunchLab)</td><td>0.25%</td></tr>
+        <tr class="total"><td>Total</td><td>1.75%</td></tr>
+      </tbody></table>
+      <p class="note">Rumble Pit's 1% is routed into the coin's own league. The program then sends <b id="potshare">50%</b> to that league's pot and the rest to the treasury. The split is enforced on-chain.</p>
+      <p class="note">After graduation the coin trades in a standard Raydium pool: 0.25% to Raydium and 0.05% to the creator. Rumble Pit takes nothing after graduation, so a coin feeds its league's pot while it's on the curve.</p>
+      <p class="note">Launching a coin is free. Joining a league costs <b id="joinfee">nothing</b>.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="proof"><div class="wrap">
+  <h2>On-chain proof</h2>
+  <p class="sub">Don't take this page's word for it. Every number above comes from these accounts, and each link opens it on Solscan.</p>
+  <div class="tablewrap"><table class="proof"><tbody id="prooftable"></tbody></table></div>
+  <p class="note">The league program can still be upgraded by the wallet listed as its upgrade authority, and it has not been independently audited. Pausing only stops new coins joining; it cannot stop a round being settled or paid.</p>
+</div></section>
+
+<section id="launch"><div class="wrap">
+  <h2>Launch a coin</h2>
+  <p class="sub">Launching straight from this page isn't open yet. Follow <a href="https://x.com/rumblepitfun" target="_blank" rel="noopener">@rumblepitfun</a> to hear when it is.</p>
+</div></section>
 </main>
 
-<footer>
-  <div class="wrap">
-    <span>Program <a id="prog" target="_blank" rel="noopener"></a></span>
-    <span>Memecoins are high risk. Only burn or buy what you can afford to lose.</span>
-  </div>
-</footer>
+<footer><div class="wrap">
+  <p>Memecoins are extremely risky. Prices can go to zero and burned tokens are gone forever. Nothing here is financial advice, and winning a round is never guaranteed.</p>
+  <p><a href="https://x.com/rumblepitfun" target="_blank" rel="noopener">@rumblepitfun on X</a></p>
+</div></footer>
 
-<dialog id="dlg"><div id="dlg-body"></div></dialog>
+<dialog id="burn">
+  <h3 id="bcoin">Burn</h3>
+  <p class="note" id="binfo"></p>
+  <label for="bamt">Amount to burn</label>
+  <input id="bamt" inputmode="decimal" autocomplete="off">
+  <p class="note" id="bmin"></p>
+  <div class="row">
+    <button class="btn ghost" id="bcancel">Cancel</button>
+    <button class="btn" id="bgo">Burn</button>
+  </div>
+  <p class="msg" id="bmsg"></p>
+</dialog>
 
 <script type="module">
 import { Buffer } from "https://esm.sh/buffer@6.0.3";
 window.Buffer = window.Buffer || Buffer;
-import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram, ComputeBudgetProgram }
-  from "https://esm.sh/@solana/web3.js@1.98.0";
+const { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram, ComputeBudgetProgram } =
+  await import("https://esm.sh/@solana/web3.js@1.98.0");
 
-// ───────────────────────── config
 const RPC = "https://mainnet.helius-rpc.com/?api-key=14fe4366-ff04-452d-a864-040a0b82d050";
 const PROGRAM = new PublicKey("HudNnA1fa7HWp8we7nZMGFNqpdR1Y8MEEp6BPFboDige");
-const META_PROGRAM = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
-const ATA_PROGRAM = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
-const LEAGUE_IDS = [1, 2, 3, 4, 5, 6];
-const RENT0 = 890880n;                                 // rent-exempt minimum of the empty vault
-const DISC = {
-  league:   [65, 23, 216, 206, 217, 174, 87, 182],
-  pool:     [241, 154, 109, 4, 17, 177, 109, 188],
-  champion: [70, 61, 149, 221, 36, 132, 118, 228],
-  platform: [77, 92, 204, 58, 187, 98, 91, 12],
-  burnFor:  [135, 104, 69, 214, 28, 87, 43, 243],
-  settle:   [175, 42, 185, 87, 144, 131, 102, 212],
+const LAUNCHLAB_PLATFORM = "DuWhz4JJ5Gk1dz7iAiHoQGMdEtaGGhkmV71MhvgSpxMy";
+const ROUTER = "J3n3w9kGszDox3nQzPvwdRdLxmGhvYc2F4WJ6cfVb8Yn";
+const UPGRADE_AUTH = "B6gKzoSCC6pW9Wgf3R2ujSkux3NELYDwwTw4u5v3X98W";
+const UPGRADE_TX = "2S271hoJpacxDUdVLzJeU47Ax96hggHPF1826pyWL8jxaSk6Z7PpmsNuMinvYZmJmsLATE5AL2LSd8mvj1yeVSbdUPE";
+const TOKEN = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+const TOKEN22 = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
+const ATA = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+const META = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+const DISC = { burn: [135,104,69,214,28,87,43,243], settle: [175,42,185,87,144,131,102,212] };
+const RENT0 = 890880;
+const LEAGUE_IDS = [1,2,3,4,5,6];
+const GAMES = {
+  0: ["Burn Race", "The coin with the most burned this round wins. Burns count as a share of each coin's own supply, so big and small supplies compete evenly."],
+  1: ["Headcount", "The coin burned by the most different wallets this round wins. Size doesn't matter, numbers do."],
+  2: ["Last Burn", "Whichever coin was burned last before the bell wins."],
+  3: ["Streak", "Plays by Burn Race rules for now: the coin with the most burned this round wins."],
+  4: ["Siege", "Plays by Burn Race rules for now: the coin with the most burned this round wins."],
+  5: ["Tug of War", "Plays by Burn Race rules for now: the coin with the most burned this round wins."],
 };
-// Rules as the program actually applies them. Games 3–5 have names but no
-// special logic on-chain yet, so they are described as what they really do.
-const GAMES = [
-  { n: "Burn Race",  rule: "The coin with the most burned this round wins.", metric: "burned" },
-  { n: "Headcount",  rule: "The coin burned by the most different wallets this round wins.", metric: "wallets" },
-  { n: "Last Burn",  rule: "The last coin burned before the bell wins.", metric: "burned" },
-  { n: "Streak",     rule: "For now this plays as Burn Race: the coin with the most burned this round wins.", metric: "burned" },
-  { n: "Siege",      rule: "For now this plays as Burn Race: the coin with the most burned this round wins.", metric: "burned" },
-  { n: "Tug of War", rule: "For now this plays as Burn Race: the coin with the most burned this round wins.", metric: "burned" },
-];
-
-const conn = new Connection(RPC, "confirmed");
 const $ = id => document.getElementById(id);
-const enc = s => new TextEncoder().encode(s);
+const conn = new Connection(RPC, "confirmed");
+const solscan = (a, kind = "account") => `https://solscan.io/${kind}/${a}`;
+const short = a => a.slice(0, 4) + "…" + a.slice(-4);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const link = (a, kind, text) => `<a href="${solscan(a, kind)}" target="_blank" rel="noopener">${text ?? a}</a>`;
+
 const u64 = n => { const b = new Uint8Array(8); new DataView(b.buffer).setBigUint64(0, BigInt(n), true); return b; };
+const enc = s => new TextEncoder().encode(s);
 const pda = (...seeds) => PublicKey.findProgramAddressSync(seeds, PROGRAM)[0];
 const leaguePda = id => pda(enc("league"), u64(id));
 const vaultPda  = id => pda(enc("vault"), u64(id));
@@ -245,269 +311,184 @@ const poolPda   = (id, i) => pda(enc("pool"), u64(id), Uint8Array.of(i));
 const champPda  = (id, mint) => pda(enc("champ"), u64(id), mint.toBytes());
 const entryPda  = (id, round, mint, who) => pda(enc("entry"), u64(id), u64(round), mint.toBytes(), who.toBytes());
 const platformPda = pda(enc("platform"));
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-const short = k => k.toBase58().slice(0, 4) + "…" + k.toBase58().slice(-4);
-const sol = l => (Number(l) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 3 });
-const pct = p => (Number(p) / 10000).toLocaleString(undefined, { maximumFractionDigits: 3 }) + "%";
-
-$("prog").textContent = short(PROGRAM);
-$("prog").href = "https://solscan.io/account/" + PROGRAM.toBase58();
-
-// ───────────────────────── decoding (layouts from the program's IDL)
-const same = (d, disc) => disc.every((b, i) => d[i] === b);
-const view = d => new DataView(d.buffer, d.byteOffset, d.byteLength);
+const dv = d => new DataView(d.buffer, d.byteOffset, d.byteLength);
 const key = (d, o) => new PublicKey(d.slice(o, o + 32));
+const ZERO = PublicKey.default.toBase58();
 
-function decodeLeague(d) {
-  if (!same(d, DISC.league)) return null;
-  const v = view(d);
-  return { id: v.getBigUint64(8, true), game: d[16], round: v.getBigUint64(17, true),
-    roundSeconds: v.getBigInt64(25, true), deadline: Number(v.getBigInt64(33, true)),
-    floorBps: v.getUint16(41, true), poolCount: d[45], tokenCount: v.getUint16(46, true),
-    lastBurnMint: key(d, 48), totalBurned: v.getBigUint64(80, true),
-    totalPaid: v.getBigUint64(88, true), roundsSettled: v.getBigUint64(96, true) };
-}
-function decodePool(d) {
-  if (!same(d, DISC.pool)) return null;
-  const v = view(d), n = d[17], members = [], scores = [], wallets = [];
-  for (let m = 0; m < n; m++) {
-    members.push(key(d, 18 + 32 * m));
-    scores.push(v.getBigUint64(530 + 8 * m, true));
-    wallets.push(v.getUint32(658 + 4 * m, true));
-  }
-  return { index: d[16], memberCount: n, members, scores, wallets };
-}
-function decodeChampion(d) {
-  if (!d || !same(d, DISC.champion)) return null;
-  const v = view(d);
-  return { round: v.getBigUint64(8, true), mint: key(d, 16), owner: key(d, 48), points: v.getBigUint64(80, true) };
-}
-function decodeMetadata(d) {
+function decLeague(d){ const v = dv(d); return {
+  id: Number(v.getBigUint64(8, true)), game: d[16], round: Number(v.getBigUint64(17, true)),
+  deadline: Number(v.getBigInt64(33, true)), floorBps: v.getUint16(41, true), poolCount: d[45],
+  tokenCount: v.getUint16(46, true), lastBurn: key(d, 48).toBase58(),
+  paid: v.getBigUint64(88, true), settled: Number(v.getBigUint64(96, true)) }; }
+function decPool(d){ const v = dv(d), n = d[17], m = [];
+  for (let i = 0; i < n; i++) m.push({ mint: key(d, 18 + i * 32),
+    score: v.getBigUint64(530 + i * 8, true), wallets: v.getUint32(658 + i * 4, true) });
+  return { index: d[16], members: m }; }
+function decChamp(d){ const v = dv(d); return { round: Number(v.getBigUint64(8, true)),
+  owner: key(d, 48).toBase58(), points: v.getBigUint64(80, true) }; }
+function decPlatform(d){ const v = dv(d); return { treasury: key(d, 40).toBase58(),
+  joinFee: Number(v.getBigUint64(72, true)), platformBps: v.getUint16(80, true), paused: d[90] === 1 }; }
+function decMeta(d){ let o = 65; const v = dv(d);
+  const str = () => { const n = v.getUint32(o, true); o += 4;
+    const s = new TextDecoder().decode(d.slice(o, o + n)).replace(/\0/g, "").trim(); o += n; return s; };
+  return { name: str(), symbol: str(), uri: str() }; }
+
+async function many(keys){ const out = [];
+  for (let i = 0; i < keys.length; i += 100) out.push(...await conn.getMultipleAccountsInfo(keys.slice(i, i + 100)));
+  return out; }
+const sol = l => (l / 1e9).toLocaleString(undefined, { maximumFractionDigits: l >= 1e10 ? 2 : 4 }) + " SOL";
+const pctOfSupply = pts => (Number(pts) / 10000).toLocaleString(undefined, { maximumFractionDigits: 3 }) + "%";
+
+const S = { platform: null, leagues: {}, pools: {}, pots: {}, champs: {}, meta: {}, sel: 1, wallet: null, provider: null };
+
+async function load(){
   try {
-    const v = view(d); let o = 65; const txt = () => {
-      const len = v.getUint32(o, true); o += 4;
-      const s = new TextDecoder().decode(d.slice(o, o + len)).replace(/\0/g, "").trim(); o += len; return s; };
-    return { name: txt(), symbol: txt(), uri: txt() };
-  } catch { return null; }
-}
-
-async function many(keys) {
-  const out = [];
-  for (let i = 0; i < keys.length; i += 100) {
-    const r = await conn.getMultipleAccountsInfo(keys.slice(i, i + 100));
-    out.push(...r);
-  }
-  return out;
-}
-
-// ───────────────────────── state
-const S = { leagues: {}, sel: 1, wallet: null, provider: null, paused: false, coins: {}, now: () => Math.floor(Date.now() / 1000) };
-const metaCache = {};
-
-async function coinInfo(mints) {
-  const need = mints.filter(m => !metaCache[m.toBase58()]);
-  if (need.length) {
-    const metas = await many(need.map(m => PublicKey.findProgramAddressSync(
-      [enc("metadata"), META_PROGRAM.toBytes(), m.toBytes()], META_PROGRAM)[0]));
-    await Promise.all(need.map(async (m, i) => {
-      const md = metas[i] ? decodeMetadata(metas[i].data) : null;
-      const info = { name: md?.name || short(m), symbol: md?.symbol || "", image: "" };
-      if (md?.uri) {
-        try { const j = await fetch(md.uri).then(r => r.json()); info.image = j.image || ""; } catch {}
-      }
-      metaCache[m.toBase58()] = info;
-    }));
-  }
-}
-
-async function load() {
-  const leagueAccs = await many([platformPda, ...LEAGUE_IDS.map(leaguePda), ...LEAGUE_IDS.map(vaultPda)]);
-  const plat = leagueAccs[0];
-  if (plat && same(plat.data, DISC.platform)) S.paused = plat.data[90] === 1;
-  const poolKeys = [], poolOwner = [];
-  LEAGUE_IDS.forEach((id, i) => {
-    const acc = leagueAccs[1 + i]; if (!acc) return;
-    const L = decodeLeague(acc.data); if (!L) return;
-    L.pot = BigInt(leagueAccs[1 + LEAGUE_IDS.length + i]?.lamports ?? 0) - RENT0;
-    if (L.pot < 0n) L.pot = 0n;
-    L.pools = [];
-    S.leagues[id] = L;
-    for (let p = 0; p < L.poolCount; p++) { poolKeys.push(poolPda(id, p)); poolOwner.push(id); }
-  });
-  const pools = await many(poolKeys);
-  pools.forEach((a, i) => { const P = a && decodePool(a.data); if (P) S.leagues[poolOwner[i]].pools.push(P); });
-
-  // every coin, and each coin's top burner this round
-  const all = [];
-  for (const id of LEAGUE_IDS) {
-    const L = S.leagues[id]; if (!L) continue;
-    L.coins = [];
-    for (const P of L.pools) P.members.forEach((m, k) =>
-      L.coins.push({ mint: m, pool: P.index, score: P.scores[k], wallets: P.wallets[k] }));
-    all.push(...L.coins.map(c => ({ id, c })));
-  }
-  const champs = await many(all.map(({ id, c }) => champPda(id, c.mint)));
-  all.forEach(({ id, c }, i) => {
-    const ch = decodeChampion(champs[i]?.data);
-    c.top = ch && ch.round === S.leagues[id].round && ch.points > 0n ? ch : null;
-  });
-  await coinInfo(all.map(x => x.c.mint));
+    const acc = await many([platformPda, ...LEAGUE_IDS.map(leaguePda), ...LEAGUE_IDS.map(vaultPda)]);
+    if (acc[0]) S.platform = decPlatform(acc[0].data);
+    LEAGUE_IDS.forEach((id, i) => {
+      if (acc[1 + i]) S.leagues[id] = decLeague(acc[1 + i].data);
+      const vl = acc[1 + LEAGUE_IDS.length + i];
+      S.pots[id] = vl ? Math.max(0, vl.lamports - RENT0) : 0;
+    });
+    const poolKeys = [], owners = [];
+    for (const id of LEAGUE_IDS) { const L = S.leagues[id]; if (!L) continue;
+      for (let i = 0; i < L.poolCount; i++) { poolKeys.push(poolPda(id, i)); owners.push(id); } }
+    const pools = await many(poolKeys), by = {};
+    pools.forEach((a, i) => { if (a) (by[owners[i]] ??= []).push(decPool(a.data)); });
+    S.pools = by;
+    await loadChampsAndMeta();
+    $("rpcerr").hidden = true;
+  } catch (e) { console.error(e); $("rpcerr").hidden = false; }
   render();
 }
 
-// Mirrors settle in the program exactly, so the page names the same winner.
-function leader(L) {
+async function loadChampsAndMeta(){
+  const mints = [], champKeys = [], owners = [];
+  for (const id of LEAGUE_IDS) for (const p of S.pools[id] ?? []) for (const m of p.members) {
+    mints.push(m.mint); champKeys.push(champPda(id, m.mint)); owners.push(id); }
+  if (!mints.length) return;
+  const champs = await many(champKeys); S.champs = {};
+  champs.forEach((a, i) => { if (a) S.champs[owners[i] + ":" + mints[i].toBase58()] = decChamp(a.data); });
+  const need = [...new Map(mints.filter(m => !S.meta[m.toBase58()]).map(m => [m.toBase58(), m])).values()];
+  if (!need.length) return;
+  const metaKeys = need.map(m => PublicKey.findProgramAddressSync([enc("metadata"), META.toBytes(), m.toBytes()], META)[0]);
+  const [mintAccs, metas] = await Promise.all([many(need), many(metaKeys)]);
+  await Promise.all(need.map(async (m, i) => {
+    const rec = { name: short(m.toBase58()), symbol: "", image: "", decimals: 6, supply: 0n, program: TOKEN };
+    if (mintAccs[i]) { const d = mintAccs[i].data; rec.supply = dv(d).getBigUint64(36, true); rec.decimals = d[44];
+      rec.program = mintAccs[i].owner.equals(TOKEN22) ? TOKEN22 : TOKEN; }
+    if (metas[i]) { try { const md = decMeta(metas[i].data); rec.name = md.name || rec.name; rec.symbol = md.symbol;
+      if (md.uri) { const j = await fetch(md.uri).then(r => r.json()).catch(() => null); if (j?.image) rec.image = j.image; } } catch {} }
+    S.meta[m.toBase58()] = rec;
+  }));
+}
+
+// who leads — the same rule settle uses on-chain
+function leader(id){
+  const L = S.leagues[id]; if (!L) return null;
   let best = null, bestV = 0n;
-  for (const P of [...L.pools].sort((a, b) => a.index - b.index))
-    P.members.forEach((m, k) => {
-      const v = L.game === 1 ? BigInt(P.wallets[k]) : P.scores[k];
-      if (v > bestV) { bestV = v; best = m; }
-    });
-  if (L.game === 2 && !L.lastBurnMint.equals(PublicKey.default)) best = L.lastBurnMint;
+  for (const p of (S.pools[id] ?? []).slice().sort((a, b) => a.index - b.index))
+    for (const m of p.members) { const v = L.game === 1 ? BigInt(m.wallets) : m.score;
+      if (v > bestV) { bestV = v; best = m.mint.toBase58(); } }
+  if (L.game === 2 && L.lastBurn !== ZERO) best = L.lastBurn;
   return best;
 }
 
-// ───────────────────────── rendering
-function render() {
-  const tabs = $("tabs");
-  tabs.innerHTML = LEAGUE_IDS.map(id => {
-    const L = S.leagues[id]; const g = GAMES[L?.game ?? 0];
-    return `<button role="tab" aria-selected="${id === S.sel}" data-id="${id}"><b>${g.n}</b><span class="num">${L ? sol(L.pot) + " SOL pot" : "…"}</span></button>`;
-  }).join("");
-  tabs.querySelectorAll("button").forEach(b => b.onclick = () => { S.sel = +b.dataset.id; render(); });
-
-  const n = $("notice");
-  if (S.paused) { n.hidden = false; n.textContent = "New coins can't join leagues right now while we finish an upgrade. Burning and payouts still work."; }
-  else n.hidden = true;
-
-  const L = S.leagues[S.sel];
-  if (!L) { $("bout").innerHTML = `<p class="empty">Couldn't read this league from the chain. Refresh to try again.</p>`; return; }
+function render(){
+  $("tabs").innerHTML = LEAGUE_IDS.map(id => { const g = GAMES[S.leagues[id]?.game ?? 0];
+    return `<button class="tab" role="tab" aria-selected="${id === S.sel}" data-id="${id}"><b>${g[0]}</b><span>${sol(S.pots[id] ?? 0)} pot</span></button>`; }).join("");
+  $("tabs").querySelectorAll(".tab").forEach(b => b.onclick = () => { S.sel = +b.dataset.id; render(); });
+  const id = S.sel, L = S.leagues[id]; if (!L) return;
   const g = GAMES[L.game] ?? GAMES[0];
-  const lead = leader(L);
-  const coins = [...L.coins].sort((a, b) => {
-    if (L.game === 2) return (b.mint.equals(lead ?? PublicKey.default) ? 1 : 0) - (a.mint.equals(lead ?? PublicKey.default) ? 1 : 0);
-    const x = g.metric === "wallets" ? BigInt(a.wallets) : a.score, y = g.metric === "wallets" ? BigInt(b.wallets) : b.score;
-    return y > x ? 1 : y < x ? -1 : 0;
-  });
+  $("lname").textContent = g[0]; $("lrule").textContent = g[1];
+  $("lpot").textContent = sol(S.pots[id] ?? 0);
+  $("lround").textContent = L.round;
+  $("lcoins").textContent = `${L.tokenCount} / 128`;
+  $("lpaid").textContent = sol(Number(L.paid));
+  $("ldone").textContent = L.settled;
+  $("scorehead").textContent = L.game === 1 ? "Wallets" : "Burned";
+  $("laddr").innerHTML = `League ${link(leaguePda(id).toBase58(), "account", short(leaguePda(id).toBase58()))} · Pot ${link(vaultPda(id).toBase58(), "account", short(vaultPda(id).toBase58()))}`;
+  if (S.platform) {
+    $("paused").hidden = !S.platform.paused;
+    $("potshare").textContent = (100 - S.platform.platformBps / 100) + "%";
+    $("joinfee").textContent = S.platform.joinFee ? sol(S.platform.joinFee) : "nothing";
+  }
+  $("floorpct").textContent = (L.floorBps / 100).toLocaleString(undefined, { maximumFractionDigits: 2 }) + "%";
 
-  const rows = coins.length ? coins.map((c, i) => {
-    const m = metaCache[c.mint.toBase58()] ?? { name: short(c.mint), symbol: "" };
-    const img = m.image ? `<img src="${esc(m.image)}" alt="" loading="lazy">` : `<span class="ph">${esc((m.name || "?")[0])}</span>`;
-    const isLead = lead && c.mint.equals(lead) && (c.score > 0n || c.wallets > 0);
-    return `<tr class="${isLead ? "lead" : ""}">
-      <td class="rank num">${i + 1}</td>
-      <td><div class="coin">${img}<div><b>${esc(m.name)}</b><span>${m.symbol ? "$" + esc(m.symbol) : ""} <a href="https://dexscreener.com/solana/${c.mint.toBase58()}" target="_blank" rel="noopener">chart</a></span></div></div></td>
-      <td class="num">${pct(c.score)}</td>
-      <td class="num hide-sm">${c.wallets}</td>
-      <td class="num hide-sm">${c.top ? `<a href="https://solscan.io/account/${c.top.owner.toBase58()}" target="_blank" rel="noopener">${short(c.top.owner)}</a>` : "—"}</td>
-      <td><button class="btn" data-burn="${c.mint.toBase58()}">Burn</button></td></tr>`;
-  }).join("") : `<tr><td colspan="6" class="empty">No coins in this league yet. The first coin to join takes the first seat.</td></tr>`;
-
-  $("bout").innerHTML = `
-    <div class="bout">
-      <div class="bout-head">
-        <h3>${g.n}</h3><p class="rule">${g.rule} Its biggest burner this round takes the pot.</p>
-        <dl class="facts">
-          <div><dt>Pot</dt><dd class="pot num">${sol(L.pot)} SOL</dd></div>
-          <div><dt>Coins</dt><dd class="num">${L.tokenCount} / 128</dd></div>
-          <div><dt>Round</dt><dd class="num">${L.round}</dd></div>
-          <div><dt>Paid out so far</dt><dd class="num">${sol(L.totalPaid)} SOL</dd></div>
-          <div><dt>Minimum burn</dt><dd class="num">${(L.floorBps / 100).toFixed(2)}%</dd></div>
-          <div><dt>Rounds</dt><dd class="num">6 hours</dd></div>
-        </dl>
-      </div>
-      <div class="bell">
-        <div><small>Bell in</small><div class="clock num" id="clock">–</div></div>
-        <div id="bellact"></div>
-      </div>
-    </div>
-    <div class="scroll"><table>
-      <thead><tr><th></th><th>Coin</th><th>Burned this round<br><span style="font-weight:400">share of supply</span></th><th class="hide-sm">Wallets</th><th class="hide-sm">Top burner</th><th></th></tr></thead>
-      <tbody>${rows}</tbody></table></div>`;
-  $("bout").querySelectorAll("[data-burn]").forEach(b => b.onclick = () => openBurn(new PublicKey(b.dataset.burn)));
-  tick();
+  const rows = [];
+  for (const p of S.pools[id] ?? []) for (const m of p.members) rows.push(m);
+  rows.sort((a, b) => L.game === 1 ? b.wallets - a.wallets : (b.score > a.score ? 1 : b.score < a.score ? -1 : 0));
+  const lead = leader(id);
+  $("empty").hidden = rows.length > 0; $("tablewrap").hidden = rows.length === 0;
+  $("standings").innerHTML = rows.map((m, i) => {
+    const k = m.mint.toBase58(), md = S.meta[k] ?? { name: short(k), symbol: "" };
+    const c = S.champs[id + ":" + k];
+    const top = c && c.round === L.round && c.points > 0n
+      ? `<span class="addr">${link(c.owner, "account", short(c.owner))}</span>` : `<span class="addr">No burns yet</span>`;
+    const score = L.game === 1 ? m.wallets : pctOfSupply(m.score);
+    const img = md.image ? `<img src="${esc(md.image)}" alt="" loading="lazy">` : `<i></i>`;
+    return `<tr class="${k === lead ? "lead" : ""}"><td>${i + 1}</td>
+      <td><div class="coin">${img}<div><b>${esc(md.name)}</b><small>${md.symbol ? "$" + esc(md.symbol) + " · " : ""}<span class="addr">${link(k, "token", short(k))}</span></small></div></div></td>
+      <td class="num">${score}</td><td>${top}</td>
+      <td><button class="btn ghost" data-burn="${k}">Burn</button></td></tr>`; }).join("");
+  $("standings").querySelectorAll("[data-burn]").forEach(b => b.onclick = () => openBurn(b.dataset.burn));
+  renderProof(); tick();
 }
 
-function tick() {
-  const L = S.leagues[S.sel], c = $("clock"); if (!L || !c) return;
-  const left = L.deadline - S.now();
-  const act = $("bellact");
+function tick(){
+  const L = S.leagues[S.sel]; if (!L) return;
+  const left = L.deadline - Math.floor(Date.now() / 1000);
   if (left > 0) {
     const h = Math.floor(left / 3600), m = Math.floor(left % 3600 / 60), s = left % 60;
-    c.textContent = `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-    if (act.dataset.s !== "wait") { act.dataset.s = "wait"; act.innerHTML = `<small>When the bell rings, anyone can settle the round. The program decides who is paid.</small>`; }
-  } else {
-    c.textContent = "Bell!";
-    if (act.dataset.s !== "ring") {
-      act.dataset.s = "ring";
-      act.innerHTML = `<button class="btn" id="ring">Ring the bell</button><p class="msg" id="ringmsg"></p>`;
-      $("ring").onclick = ringBell;
+    $("bellhead").textContent = "Bell in";
+    $("lbell").textContent = `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    $("ring").hidden = true;
+  } else { $("bellhead").textContent = "Bell"; $("lbell").textContent = "Due now"; $("ring").hidden = false; }
+}
+
+let proofDone = false;
+function renderProof(){
+  if (proofDone || !S.platform) return; proofDone = true;
+  const row = (label, a, kind = "account") => `<tr><td>${label}</td><td>${link(a, kind)}</td></tr>`;
+  let h = row("League program", PROGRAM.toBase58())
+    + row("Program upgrade authority", UPGRADE_AUTH)
+    + row("League platform settings", platformPda.toBase58())
+    + row("Raydium LaunchLab platform", LAUNCHLAB_PLATFORM)
+    + row("Fee router (claims trading fees)", ROUTER)
+    + row("Treasury", S.platform.treasury);
+  for (const id of LEAGUE_IDS) { const L = S.leagues[id]; if (!L) continue; const n = (GAMES[L.game] ?? GAMES[0])[0];
+    h += row(`${n} league`, leaguePda(id).toBase58()) + row(`${n} pot`, vaultPda(id).toBase58()); }
+  h += row("Latest program upgrade", UPGRADE_TX, "tx");
+  $("prooftable").innerHTML = h;
+}
+
+// ── wallet
+function findProvider(){
+  const w = window;
+  return w.phantom?.solana ?? (w.solflare?.isSolflare ? w.solflare : null) ?? w.backpack ?? w.solana ?? null;
+}
+async function connect(){
+  const p = findProvider();
+  if (!p) {
+    if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+      location.href = "https://phantom.app/ul/browse/" + encodeURIComponent(location.href) + "?ref=" + encodeURIComponent(location.origin);
+      return;
     }
+    alert("No Solana wallet found in this browser. Install Phantom, Solflare or Backpack, then reload the page."); return;
   }
-}
-setInterval(tick, 1000);
-
-// ───────────────────────── wallets
-function found() {
-  const w = [];
-  if (window.phantom?.solana?.isPhantom) w.push(["Phantom", window.phantom.solana]);
-  if (window.solflare?.isSolflare) w.push(["Solflare", window.solflare]);
-  if (window.backpack?.isBackpack) w.push(["Backpack", window.backpack]);
-  if (!w.length && window.solana) w.push(["Wallet", window.solana]);
-  return w;
-}
-
-function modal(html) { $("dlg-body").innerHTML = html; if (!$("dlg").open) $("dlg").showModal(); }
-function closeModal() { $("dlg").close(); }
-$("dlg").addEventListener("click", e => { if (e.target === $("dlg")) closeModal(); });
-
-async function connect(p) {
   try {
     const r = await p.connect();
-    const pk = r?.publicKey ?? p.publicKey;
-    if (!pk) throw new Error("The wallet didn't return an address.");
-    S.wallet = new PublicKey(pk.toString()); S.provider = p;
-    p.on?.("accountChanged", k => { if (k) { S.wallet = new PublicKey(k.toString()); showWallet(); } else disconnect(); });
-    showWallet(); closeModal(); return true;
-  } catch (e) {
-    modal(`<h3>Not connected</h3><p class="msg bad">${esc(e?.message || "The wallet refused the connection.")}</p>
-      <div class="dlg-actions"><button class="btn ghost" id="x">Close</button></div>`);
-    $("x").onclick = closeModal; return false;
-  }
+    S.provider = p; S.wallet = new PublicKey((r?.publicKey ?? p.publicKey).toString());
+    $("wallet").textContent = short(S.wallet.toBase58());
+  } catch (e) { alert("The wallet didn't connect: " + (e?.message ?? e)); }
 }
-function disconnect() { S.provider?.disconnect?.(); S.wallet = null; S.provider = null; showWallet(); }
-function showWallet() {
-  const b = $("wallet");
-  if (S.wallet) { b.textContent = short(S.wallet); b.classList.add("on"); }
-  else { b.textContent = "Connect wallet"; b.classList.remove("on"); }
-}
+$("wallet").onclick = async () => {
+  if (S.wallet) { try { await S.provider.disconnect?.(); } catch {} S.wallet = null; $("wallet").textContent = "Connect wallet"; return; }
+  await connect();
+};
 
-async function chooseWallet() {
-  if (location.protocol === "http:" && !/^(localhost|127\.)/.test(location.hostname)) {
-    modal(`<h3>Use the secure site</h3><p class="msg">Wallets only connect over a secure link.</p>
-      <div class="dlg-actions"><a class="btn" href="https://${location.host}${location.pathname}">Open the secure site</a></div>`);
-    return false;
-  }
-  const w = found();
-  if (!w.length) {
-    const mobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-    const link = `https://phantom.app/ul/browse/${encodeURIComponent(location.href)}?ref=${encodeURIComponent(location.origin)}`;
-    modal(`<h3>No wallet found</h3><p class="msg">${mobile ? "Open this page inside your wallet app's browser." : "Install Phantom, Solflare or Backpack, then refresh this page."}</p>
-      <div class="dlg-actions">${mobile ? `<a class="btn" href="${link}">Open in Phantom</a>` : `<a class="btn" href="https://phantom.app/download" target="_blank" rel="noopener">Get Phantom</a>`}<button class="btn ghost" id="x">Close</button></div>`);
-    $("x").onclick = closeModal; return false;
-  }
-  if (w.length === 1) return connect(w[0][1]);
-  return new Promise(res => {
-    modal(`<h3>Choose a wallet</h3><div class="pick">${w.map(([n], i) => `<button data-i="${i}">${n}</button>`).join("")}</div>`);
-    $("dlg-body").querySelectorAll("[data-i]").forEach(b => b.onclick = async () => res(await connect(w[+b.dataset.i][1])));
-  });
-}
-$("wallet").onclick = () => S.wallet ? disconnect() : chooseWallet();
-
-// Phantom and Solflare send it themselves; anything else signs and we send.
-async function send(ixs) {
-  const tx = new Transaction();
-  tx.add(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50_000 }), ...ixs);
+async function send(ixs){
+  const tx = new Transaction().add(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50000 }), ...ixs);
   tx.feePayer = S.wallet;
   const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
   tx.recentBlockhash = blockhash;
@@ -518,126 +499,93 @@ async function send(ixs) {
   if (res.value.err) throw new Error("The transaction failed on-chain: " + JSON.stringify(res.value.err));
   return sig;
 }
-function niceError(e) {
-  const m = String(e?.message || e);
-  const known = { RoundOver: "This round is over. Ring the bell to start the next one, then burn.",
-    NotAMember: "That coin isn't in this league.", "User rejected": "You cancelled it in your wallet.",
-    "insufficient": "Not enough SOL for the fee, or not enough tokens.", StillRunning: "The round hasn't ended yet." };
-  for (const k in known) if (m.includes(k)) return known[k];
-  return m.slice(0, 180);
+function friendly(e){
+  const m = String(e?.message ?? e);
+  if (/User rejected|rejected the request/i.test(m)) return "You cancelled it in your wallet.";
+  if (/RoundOver/.test(m)) return "This round has ended. Ring the bell first, then burn in the new round.";
+  if (/insufficient/i.test(m)) return "Not enough tokens or SOL in this wallet.";
+  return m.slice(0, 200);
 }
 
-// ───────────────────────── burning
-function toRaw(str, decimals) {
-  const s = String(str).trim(); if (!/^\d*\.?\d*$/.test(s) || s === "" || s === ".") return null;
-  const [w, f = ""] = s.split(".");
-  return BigInt(w || "0") * 10n ** BigInt(decimals) + BigInt((f + "0".repeat(decimals)).slice(0, decimals) || "0");
+// ── burn
+let burnMint = null;
+async function openBurn(k){
+  if (!S.wallet) { await connect(); if (!S.wallet) return; }
+  burnMint = new PublicKey(k);
+  const md = S.meta[k], L = S.leagues[S.sel];
+  $("bcoin").textContent = `Burn ${md?.symbol ? "$" + md.symbol : md?.name ?? short(k)}`;
+  msg(""); $("bamt").value = "";
+  const ata = PublicKey.findProgramAddressSync([S.wallet.toBytes(), md.program.toBytes(), burnMint.toBytes()], ATA)[0];
+  let bal = 0n;
+  try { bal = BigInt((await conn.getTokenAccountBalance(ata)).value.amount); } catch {}
+  const floor = md.supply * BigInt(L.floorBps) / 10000n;
+  const fmt = raw => (Number(raw) / 10 ** md.decimals).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  $("binfo").textContent = `You hold ${fmt(bal)}. Burned tokens are destroyed permanently.`;
+  $("bmin").textContent = `Each burn is at least ${fmt(floor)} (${L.floorBps / 100}% of supply). Entering less still burns the minimum.`;
+  $("bamt").placeholder = fmt(floor).replace(/,/g, "");
+  Object.assign($("burn").dataset, { ata: ata.toBase58(), floor: floor.toString(), bal: bal.toString() });
+  $("burn").showModal();
 }
-function fromRaw(raw, decimals) {
-  const d = 10n ** BigInt(decimals), w = raw / d, f = raw % d;
-  const fs = f.toString().padStart(decimals, "0").replace(/0+$/, "").slice(0, 4);
-  return w.toLocaleString() + (fs ? "." + fs : "");
-}
+$("bcancel").onclick = () => $("burn").close();
+$("bgo").onclick = async () => {
+  const k = burnMint.toBase58(), md = S.meta[k], id = S.sel, L = S.leagues[id];
+  const floor = BigInt($("burn").dataset.floor), bal = BigInt($("burn").dataset.bal);
+  const typed = $("bamt").value.trim().replace(/,/g, "");
+  let amount = 0n;
+  if (typed) { if (!/^\d+(\.\d+)?$/.test(typed)) { msg("Enter a number.", true); return; }
+    const [w, f = ""] = typed.split("."); amount = BigInt(w + f.padEnd(md.decimals, "0").slice(0, md.decimals)); }
+  const cost = amount > floor ? amount : floor;
+  if (cost > bal) { msg("You don't hold enough to burn that. The minimum burn is shown above.", true); return; }
+  if (L.deadline <= Math.floor(Date.now() / 1000)) { msg("This round has ended. Ring the bell first.", true); return; }
+  const pool = (S.pools[id] ?? []).find(p => p.members.some(m => m.mint.toBase58() === k));
+  const ix = new TransactionInstruction({ programId: PROGRAM,
+    data: Buffer.concat([Buffer.from(DISC.burn), Buffer.from(u64(amount))]), keys: [
+    { pubkey: leaguePda(id), isSigner: false, isWritable: true },
+    { pubkey: poolPda(id, pool.index), isSigner: false, isWritable: true },
+    { pubkey: entryPda(id, L.round, burnMint, S.wallet), isSigner: false, isWritable: true },
+    { pubkey: champPda(id, burnMint), isSigner: false, isWritable: true },
+    { pubkey: burnMint, isSigner: false, isWritable: true },
+    { pubkey: new PublicKey($("burn").dataset.ata), isSigner: false, isWritable: true },
+    { pubkey: S.wallet, isSigner: true, isWritable: true },
+    { pubkey: md.program, isSigner: false, isWritable: false },
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+  ]});
+  $("bgo").disabled = true; msg("Confirm in your wallet…");
+  try { const sig = await send([ix]);
+    $("bmsg").className = "msg good";
+    $("bmsg").innerHTML = `Burned. ${link(sig, "tx", "View the transaction")}`;
+    await load();
+  } catch (e) { msg(friendly(e), true); }
+  finally { $("bgo").disabled = false; }
+};
+function msg(t, bad){ $("bmsg").className = "msg" + (bad ? " bad" : ""); $("bmsg").textContent = t; }
 
-async function openBurn(mint) {
-  if (!S.wallet && !(await chooseWallet())) return;
-  const L = S.leagues[S.sel];
-  const coin = L.coins.find(c => c.mint.equals(mint));
-  const m = metaCache[mint.toBase58()] ?? { name: short(mint), symbol: "" };
-  modal(`<h3>Burn ${esc(m.symbol ? "$" + m.symbol : m.name)}</h3><p class="msg">Reading your balance…</p>`);
-  try {
-    const mintAcc = await conn.getAccountInfo(mint);
-    if (!mintAcc) throw new Error("Couldn't find this coin on-chain.");
-    const tokenProgram = mintAcc.owner;
-    const mv = view(mintAcc.data);
-    const supply = mv.getBigUint64(36, true), decimals = mintAcc.data[44];
-    const ata = PublicKey.findProgramAddressSync([S.wallet.toBytes(), tokenProgram.toBytes(), mint.toBytes()], ATA_PROGRAM)[0];
-    let bal = 0n;
-    try { bal = BigInt((await conn.getTokenAccountBalance(ata)).value.amount); } catch {}
-    const floor = supply * BigInt(L.floorBps) / 10000n;
-    const unit = m.symbol ? "$" + esc(m.symbol) : "tokens";
+// ── ring the bell: anyone can settle; the program decides who is paid
+$("ring").onclick = async () => {
+  if (!S.wallet) { await connect(); if (!S.wallet) return; }
+  const id = S.sel, L = S.leagues[id], best = leader(id);
+  let champ = S.wallet, winner = S.wallet;
+  if (best) { champ = champPda(id, new PublicKey(best));
+    const c = S.champs[id + ":" + best];
+    if (c && c.round === L.round && c.points > 0n) winner = new PublicKey(c.owner); }
+  const ix = new TransactionInstruction({ programId: PROGRAM, data: Buffer.from(DISC.settle), keys: [
+    { pubkey: leaguePda(id), isSigner: false, isWritable: true },
+    { pubkey: vaultPda(id), isSigner: false, isWritable: true },
+    { pubkey: champ, isSigner: false, isWritable: false },
+    { pubkey: winner, isSigner: false, isWritable: true },
+    { pubkey: S.wallet, isSigner: true, isWritable: true },
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ...Array.from({ length: L.poolCount }, (_, i) => ({ pubkey: poolPda(id, i), isSigner: false, isWritable: true })),
+  ]});
+  $("ring").disabled = true; $("ringmsg").className = "msg"; $("ringmsg").textContent = "Confirm in your wallet…";
+  try { const sig = await send([ix]);
+    $("ringmsg").className = "msg good"; $("ringmsg").innerHTML = `Bell rung. ${link(sig, "tx", "View the transaction")}`;
+    await load();
+  } catch (e) { $("ringmsg").className = "msg bad"; $("ringmsg").textContent = friendly(e); }
+  finally { $("ring").disabled = false; }
+};
 
-    modal(`<h3>Burn ${esc(m.symbol ? "$" + m.symbol : m.name)}</h3>
-      <p class="rule" style="color:var(--dust)">Burned tokens are destroyed forever. Your burn scores for this coin in ${esc(GAMES[L.game].n)}, and the coin's biggest burner takes the pot if it wins.</p>
-      <label for="amt">Amount to burn</label>
-      <input id="amt" inputmode="decimal" autocomplete="off" value="${fromRaw(floor, decimals).replace(/,/g, "")}">
-      <div class="row"><span>You hold</span><b class="num">${fromRaw(bal, decimals)} ${unit}</b></div>
-      <div class="row"><span>Minimum burn</span><b class="num">${fromRaw(floor, decimals)} ${unit}</b></div>
-      <div class="row"><span>Burned this round</span><b class="num">${pct(coin?.score ?? 0n)} of supply</b></div>
-      <p class="msg" id="bmsg"></p>
-      <div class="dlg-actions"><button class="btn ghost" id="x">Cancel</button><button class="btn" id="go">Burn</button></div>`);
-    $("x").onclick = closeModal;
-    const msg = $("bmsg"), amt = $("amt");
-    const check = () => {
-      const raw = toRaw(amt.value, decimals);
-      if (raw === null) { msg.className = "msg bad"; msg.textContent = "Enter a number."; return null; }
-      const cost = raw < floor ? floor : raw;
-      if (cost > bal) { msg.className = "msg bad"; msg.textContent = `You need at least ${fromRaw(cost, decimals)} ${unit.replace(/<[^>]+>/g, "")}.`; return null; }
-      msg.className = "msg"; msg.textContent = raw < floor ? `Below the minimum, so ${fromRaw(floor, decimals)} will be burned.` : "";
-      return cost;
-    };
-    amt.oninput = check; check();
-    $("go").onclick = async () => {
-      const cost = check(); if (cost === null) return;
-      $("go").disabled = true; msg.className = "msg"; msg.textContent = "Confirm in your wallet…";
-      try {
-        const id = Number(L.id);
-        const ix = new TransactionInstruction({ programId: PROGRAM, data: Buffer.from([...DISC.burnFor, ...u64(cost)]), keys: [
-          { pubkey: leaguePda(id), isSigner: false, isWritable: true },
-          { pubkey: poolPda(id, coin.pool), isSigner: false, isWritable: true },
-          { pubkey: entryPda(id, L.round, mint, S.wallet), isSigner: false, isWritable: true },
-          { pubkey: champPda(id, mint), isSigner: false, isWritable: true },
-          { pubkey: mint, isSigner: false, isWritable: true },
-          { pubkey: ata, isSigner: false, isWritable: true },
-          { pubkey: S.wallet, isSigner: true, isWritable: true },
-          { pubkey: tokenProgram, isSigner: false, isWritable: false },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-        ]});
-        const sig = await send([ix]);
-        msg.className = "msg ok";
-        msg.innerHTML = `Burned. <a href="https://solscan.io/tx/${sig}" target="_blank" rel="noopener">View the transaction</a>`;
-        $("go").textContent = "Done"; $("go").disabled = false; $("go").onclick = closeModal;
-        load();
-      } catch (e) { msg.className = "msg bad"; msg.textContent = niceError(e); $("go").disabled = false; }
-    };
-  } catch (e) {
-    modal(`<h3>Can't burn yet</h3><p class="msg bad">${esc(niceError(e))}</p><div class="dlg-actions"><button class="btn ghost" id="x">Close</button></div>`);
-    $("x").onclick = closeModal;
-  }
-}
-
-// ───────────────────────── ringing the bell (anyone can settle)
-async function ringBell() {
-  if (!S.wallet && !(await chooseWallet())) return;
-  const L = S.leagues[S.sel], id = Number(L.id), msg = $("ringmsg");
-  $("ring").disabled = true; msg.className = "msg"; msg.textContent = "Working out the winner…";
-  try {
-    const best = leader(L);
-    let champion = S.wallet, winner = S.wallet;
-    if (best) {
-      champion = champPda(id, best);
-      const ch = decodeChampion((await conn.getAccountInfo(champion))?.data);
-      if (ch && ch.round === L.round && ch.points > 0n) winner = ch.owner;
-    }
-    const pools = [...Array(L.poolCount).keys()].map(i => ({ pubkey: poolPda(id, i), isSigner: false, isWritable: true }));
-    const ix = new TransactionInstruction({ programId: PROGRAM, data: Buffer.from(DISC.settle), keys: [
-      { pubkey: leaguePda(id), isSigner: false, isWritable: true },
-      { pubkey: vaultPda(id), isSigner: false, isWritable: true },
-      { pubkey: champion, isSigner: false, isWritable: false },
-      { pubkey: winner, isSigner: false, isWritable: true },
-      { pubkey: S.wallet, isSigner: true, isWritable: true },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      ...pools ]});
-    msg.textContent = "Confirm in your wallet…";
-    const sig = await send([ix]);
-    msg.className = "msg ok";
-    msg.innerHTML = `Round settled. <a href="https://solscan.io/tx/${sig}" target="_blank" rel="noopener">View the transaction</a>`;
-    load();
-  } catch (e) { msg.className = "msg bad"; msg.textContent = niceError(e); $("ring").disabled = false; }
-}
-
-load().catch(e => { $("bout").innerHTML = `<p class="empty">Couldn't reach Solana: ${esc(niceError(e))}. Refresh to try again.</p>`; });
-setInterval(() => load().catch(() => {}), 20000);
+load(); setInterval(load, 20000); setInterval(tick, 1000);
 </script>
 </body>
 </html>
