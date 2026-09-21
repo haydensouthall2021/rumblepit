@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rumble Pit — coins fight in leagues on Solana</title>
-<meta name="description" content="Launch a coin, join a league, burn to score. Every six hours one coin wins the pot, paid on-chain to its biggest burner.">
+<meta name="description" content="Launch a coin, join a league, burn to score. Every hour one coin wins the pot, paid on-chain to its biggest burner.">
 <meta property="og:title" content="Rumble Pit">
-<meta property="og:description" content="Coins fight in leagues. Every six hours one wins the pot, paid on-chain to its biggest burner.">
+<meta property="og:description" content="Coins fight in leagues. Every hour one wins the pot, paid on-chain to its biggest burner.">
 <meta property="og:image" content="https://rumblepit.fun/img/og.jpg">
 <meta property="og:url" content="https://rumblepit.fun">
 <meta name="twitter:card" content="summary_large_image">
@@ -174,7 +174,7 @@ footer p{max-width:70ch}
 <div class="hero"><img src="img/banner.jpg" alt="Rumble Pit: a crowned frog boxer in a Solana arena"></div>
 
 <div class="wrap lede">
-  <p>Coins fight in leagues. Every six hours one coin wins the pot, and it goes straight to that coin's biggest burner.</p>
+  <p>Coins fight in leagues. Every hour one coin wins the pot, and it goes straight to that coin's biggest burner.</p>
   <div class="row">
     <a class="btn" href="#leagues">See the leagues</a>
     <a class="btn ghost" href="#launch">Launch a coin</a>
@@ -227,7 +227,7 @@ footer p{max-width:70ch}
     <li><h3>Launch</h3><p>Launch a coin from this page. It goes live on Raydium LaunchLab, so it trades and shows on charts from the first buy.</p></li>
     <li><h3>Join a league</h3><p>At launch the coin picks one league for life. A league holds up to 128 coins in pools of 16, all sharing one pot.</p></li>
     <li><h3>Burn to score</h3><p>Holders burn their coin to score for it. Burned tokens are destroyed for good. Each burn is at least <span id="floorpct">0.10%</span> of that coin's supply.</p></li>
-    <li><h3>The bell</h3><p>Every six hours the round ends. Anyone can ring the bell; the program picks the winner and pays the pot in the same transaction.</p></li>
+    <li><h3>The bell</h3><p>Every hour the round ends. Anyone can ring the bell; the program picks the winner and pays the pot in the same transaction.</p></li>
   </ol>
 </div></section>
 
@@ -339,7 +339,7 @@ const ATA = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 const META = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 const DISC = { burn: [135,104,69,214,28,87,43,243], settle: [175,42,185,87,144,131,102,212] };
 const RENT0 = 890880;
-const LEAGUE_IDS = [1,2,3,4,5,6];
+const LEAGUE_IDS = [7,8,9,10,11,12];   // the 1-hour leagues (1–6 were the retired 6-hour ones)
 const GAMES = {
   0: ["Burn Race", "The coin with the most burned this round wins. Burns count as a share of each coin's own supply, so big and small supplies compete evenly."],
   1: ["Headcount", "The coin burned by the most different wallets this round wins. Size doesn't matter, numbers do."],
@@ -392,7 +392,7 @@ async function many(keys){ const out = [];
 const sol = l => (l / 1e9).toLocaleString(undefined, { maximumFractionDigits: l >= 1e10 ? 2 : 4 }) + " SOL";
 const pctOfSupply = pts => (Number(pts) / 10000).toLocaleString(undefined, { maximumFractionDigits: 3 }) + "%";
 
-const S = { platform: null, leagues: {}, pools: {}, pots: {}, champs: {}, meta: {}, sel: 1, wallet: null, provider: null };
+const S = { platform: null, leagues: {}, pools: {}, pots: {}, champs: {}, meta: {}, sel: LEAGUE_IDS[0], wallet: null, provider: null };
 
 async function load(){
   try {
@@ -488,7 +488,7 @@ function render(){
   renderProof(); tick(); fillLeaguePicker();
 }
 function fillLeaguePicker(){
-  const sel = $("fleague"), keep = sel.value || "1";
+  const sel = $("fleague"), keep = sel.value || String(LEAGUE_IDS[0]);
   sel.innerHTML = LEAGUE_IDS.map(id => { const L = S.leagues[id]; if (!L) return "";
     const full = L.tokenCount >= 128;
     return `<option value="${id}" ${full ? "disabled" : ""}>${(GAMES[L.game] ?? GAMES[0])[0]} (${L.tokenCount}/128${full ? ", full" : ""})</option>`; }).join("");
