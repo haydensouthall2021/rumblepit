@@ -10,7 +10,7 @@ export function makeLauncher(web3, Buffer) {
   const TOKEN     = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
   const ATA       = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
   const META      = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
-  const LEAGUE    = new PublicKey("HudNnA1fa7HWp8we7nZMGFNqpdR1Y8MEEp6BPFboDige");
+  const LEAGUE    = new PublicKey("4WGWpfP3GXpeF5vgcv4H2RHiXpeLTVCW5iEY2ofmePjL");
   const LUT       = new PublicKey("AcL1Vo8oy1ULiavEcjSUcwfBSForXMudcZvDZy5nzJkU");   // Raydium's lookup table
   const OUR_LUT   = new PublicKey("Go1mZuDFMR4eyJG3QPcnmR87pzRE1UjwPsPzHPY6YxV1");   // Rumble Pit's: our fixed addresses
 

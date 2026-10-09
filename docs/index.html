@@ -18,6 +18,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Archivo:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+.soonbar{display:none;background:var(--slime);color:#050407;font-weight:700;text-align:center;padding:10px 16px;font-size:15px}
+body.soon .soonbar{display:block}
+body.soon #lform{opacity:.45;pointer-events:none}
+body.soon .soonnote{display:block}
+.soonnote{display:none;color:var(--slime);font-weight:700;margin:0 0 14px}
 :root{
   --pit:#050407; --ring:#0e0c14; --rope:#1c1826; --bone:#f2efe6; --dust:#9b96a8;
   --slime:#c8f52b; --gold:#e0ad3c; --violet:#9d5cff; --bad:#ff5a6e;
@@ -169,6 +174,7 @@ footer p{max-width:70ch}
 </head>
 <body>
 
+<div class="soonbar" id="soonbar">Rumble Pit is coming back. The leagues and the launch form reopen shortly. Follow <a href="https://x.com/rumblepitfun" style="color:#050407">@rumblepitfun</a> for the moment they go live.</div>
 <header class="bar"><div class="wrap">
   <a class="brand" href="#top"><img src="img/logo.png" alt="">Rumble Pit</a>
   <nav class="nav" aria-label="Sections">
@@ -291,6 +297,7 @@ footer p{max-width:70ch}
 <section id="launch"><div class="wrap">
   <h2>Launch a coin</h2>
   <p class="sub">Your coin goes live on Raydium and straight into the league you pick. It stays in that league for life. You earn 0.5% of every trade on it before graduation.</p>
+  <p class="soonnote">Launching reopens shortly.</p>
   <form class="launch" id="lform" novalidate>
     <label class="drop" id="drop"><input type="file" id="fimg" accept="image/png,image/jpeg,image/webp,image/gif"><span id="dropmsg">Add an image<br><small>PNG, JPG, GIF or WebP, up to 2 MB</small></span></label>
     <div>
@@ -347,7 +354,7 @@ const FN = "https://hmnznsdqjdqgrntcuylf.supabase.co/functions/v1/launch";
 const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtbnpuc2RxamRxZ3JudGN1eWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDc5MjMsImV4cCI6MjEwNTU4MzkyM30.0IeEdJByfjBdezGrv-9Jo1njSpNqB-nDJxbD6iEdps8";
 
 const RPC = "https://mainnet.helius-rpc.com/?api-key=14fe4366-ff04-452d-a864-040a0b82d050";
-const PROGRAM = new PublicKey("HudNnA1fa7HWp8we7nZMGFNqpdR1Y8MEEp6BPFboDige");
+const PROGRAM = new PublicKey("4WGWpfP3GXpeF5vgcv4H2RHiXpeLTVCW5iEY2ofmePjL");
 const LAUNCHLAB_PLATFORM = "DuWhz4JJ5Gk1dz7iAiHoQGMdEtaGGhkmV71MhvgSpxMy";
 const ROUTER = "J3n3w9kGszDox3nQzPvwdRdLxmGhvYc2F4WJ6cfVb8Yn";
 const UPGRADE_AUTH = "B6gKzoSCC6pW9Wgf3R2ujSkux3NELYDwwTw4u5v3X98W";
@@ -369,6 +376,12 @@ const GAMES = {
 };
 const $ = id => document.getElementById(id);
 const conn = new Connection(RPC, "confirmed");
+const LIVE = await conn.getAccountInfo(PROGRAM).then(a => !!a && a.executable).catch(() => true);
+if (!LIVE){
+  document.body.classList.add("soon");
+  const t = document.getElementById("lname"); if (t) t.textContent = "Reopening shortly";
+  document.querySelectorAll("#leagues td, #leagues .stat b, #leagues [id^='l']").forEach(el => { if (el.textContent.trim() === "Loading" || el.textContent.trim() === "…") el.textContent = "soon"; });
+}
 const solscan = (a, kind = "account") => `https://solscan.io/${kind}/${a}`;
 const short = a => a.slice(0, 4) + "…" + a.slice(-4);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
